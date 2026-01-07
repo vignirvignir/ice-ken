@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     environment:
-      name: Production
+      name: prod
     permissions:
       contents: write   # for creating Git tags and GitHub Releases
       id-token: write   # for OIDC (required for PyPI Trusted Publishing)
@@ -64,6 +64,8 @@ jobs:
 
   testpypi:
     runs-on: ubuntu-latest
+    environment:
+      name: prod
     permissions:
       id-token: write   # for OIDC (Trusted Publishing)
       contents: read    # recommended by pypa/gh-action-pypi-publish
