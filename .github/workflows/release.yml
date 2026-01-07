@@ -10,6 +10,7 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
     environment:
       name: Production
     permissions:
@@ -23,6 +24,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # required for semantic-release to see tags/history
+          ref: ${{ github.ref_name }}  # ensure a branch checkout (not detached HEAD)
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -73,6 +75,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.ref_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v5

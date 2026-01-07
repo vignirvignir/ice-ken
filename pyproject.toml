@@ -47,4 +47,4 @@ build_command = "python -m build"
 assets = []
 upload_to_pypi = false
 upload_to_release = true
-commit_parser = "angular"
+commit_parser = "conventional"
