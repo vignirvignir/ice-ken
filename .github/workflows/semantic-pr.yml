@@ -8,7 +8,9 @@ jobs:
   semantic-pull-request:
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: read
+      contents: read
+      pull-requests: write
+      checks: write
     steps:
       - uses: amannn/action-semantic-pull-request@v5
         env:
