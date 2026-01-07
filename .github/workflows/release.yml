@@ -64,6 +64,8 @@ jobs:
 
   testpypi:
     runs-on: ubuntu-latest
+    environment:
+      name: production
     permissions:
       id-token: write   # for OIDC (Trusted Publishing)
     if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
