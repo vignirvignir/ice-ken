@@ -10,6 +10,8 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    environment:
+      name: Production
     permissions:
       contents: write   # for creating Git tags and GitHub Releases
       id-token: write   # for OIDC (required for PyPI Trusted Publishing)
