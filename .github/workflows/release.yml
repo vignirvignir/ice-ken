@@ -10,8 +10,6 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
     permissions:
       contents: write   # for creating Git tags and GitHub Releases
       id-token: write   # for OIDC (required for PyPI Trusted Publishing)
@@ -62,8 +60,6 @@ jobs:
 
   testpypi:
     runs-on: ubuntu-latest
-    environment:
-      name: testpypi
     permissions:
       id-token: write   # for OIDC (Trusted Publishing)
     if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
