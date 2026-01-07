@@ -10,8 +10,9 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
     environment:
-      name: Production
+      name: prod
     permissions:
       contents: write   # for creating Git tags and GitHub Releases
       id-token: write   # for OIDC (required for PyPI Trusted Publishing)
@@ -23,6 +24,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # required for semantic-release to see tags/history
+          ref: ${{ github.ref_name }}  # ensure a branch checkout (not detached HEAD)
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -62,8 +64,11 @@ jobs:
 
   testpypi:
     runs-on: ubuntu-latest
+    environment:
+      name: prod
     permissions:
       id-token: write   # for OIDC (Trusted Publishing)
+      contents: read    # recommended by pypa/gh-action-pypi-publish
     if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
     concurrency:
       group: testpypi-${{ github.ref }}
@@ -73,6 +78,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
