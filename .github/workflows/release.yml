@@ -68,6 +68,7 @@ jobs:
       name: production
     permissions:
       id-token: write   # for OIDC (Trusted Publishing)
+      contents: read    # recommended by pypa/gh-action-pypi-publish
     if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
     concurrency:
       group: testpypi-${{ github.ref }}
