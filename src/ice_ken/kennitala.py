@@ -305,3 +305,117 @@ def generate_company(enforce_checksum: bool = True, formatted: bool = True) -> s
         break
 
     return format_kennitala(digits) if formatted else digits
+
+
+def generate_personal_for_date(
+    birth_date: date, *, enforce_checksum: bool = True, formatted: bool = True
+) -> str:
+    """Generate a personal kennitala for a specific birth date.
+
+    - If enforce_checksum is True, returns a checksum-valid ID.
+    - If False, returns a structurally valid ID that may fail the checksum.
+    - If formatted is True (default), returns "DDMMYY-NNNX"; otherwise returns 10 digits.
+    """
+    dd = birth_date.day
+    mm = birth_date.month
+    yy = birth_date.year % 100
+    c = _century_indicator_for_year(birth_date.year)
+
+    while True:
+        r = random.randint(20, 99)
+        first8 = f"{dd:02d}{mm:02d}{yy:02d}{r:02d}"
+        if enforce_checksum:
+            chk = _compute_checksum_for_first8(first8)
+            if chk is None:
+                continue
+            p = chk
+        else:
+            chk = _compute_checksum_for_first8(first8)
+            if chk is None:
+                p = random.randint(0, 9)
+            else:
+                choices = [d for d in range(10) if d != chk]
+                p = random.choice(choices)
+        digits = f"{first8}{p}{c}"
+        break
+
+    return format_kennitala(digits) if formatted else digits
+
+
+def generate_company_for_date(
+    reg_date: date, *, enforce_checksum: bool = True, formatted: bool = True
+) -> str:
+    """Generate a company/legal-entity kennitala for a specific registration date.
+
+    - Company day uses +40 encoding (DD = 41–71).
+    - If enforce_checksum is True, returns a checksum-valid ID.
+    - If False, returns a structurally valid ID that may fail the checksum.
+    - If formatted is True (default), returns "DDMMYY-NNNX"; otherwise returns 10 digits.
+    """
+    dd = reg_date.day + 40
+    mm = reg_date.month
+    yy = reg_date.year % 100
+    c = _century_indicator_for_year(reg_date.year)
+
+    while True:
+        r = random.randint(20, 99)
+        first8 = f"{dd:02d}{mm:02d}{yy:02d}{r:02d}"
+        if enforce_checksum:
+            chk = _compute_checksum_for_first8(first8)
+            if chk is None:
+                continue
+            p = chk
+        else:
+            chk = _compute_checksum_for_first8(first8)
+            if chk is None:
+                p = random.randint(0, 9)
+            else:
+                choices = [d for d in range(10) if d != chk]
+                p = random.choice(choices)
+        digits = f"{first8}{p}{c}"
+        break
+
+    return format_kennitala(digits) if formatted else digits
+
+
+def random_personal(
+    start: date,
+    end: date,
+    *,
+    enforce_checksum: bool = True,
+    formatted: bool = True,
+) -> str:
+    """Generate a random personal kennitala within a given date range (inclusive).
+
+    Raises ValueError if start > end.
+    """
+    if start > end:
+        raise ValueError("Start must not be > end")
+    birth = _random_date(start, end)
+    return generate_personal_for_date(birth, enforce_checksum=enforce_checksum, formatted=formatted)
+
+
+def random_company(
+    start: date,
+    end: date,
+    *,
+    enforce_checksum: bool = True,
+    formatted: bool = True,
+) -> str:
+    """Generate a random company/legal-entity kennitala within a date range (inclusive).
+
+    Raises ValueError if start > end.
+    """
+    if start > end:
+        raise ValueError("Start must not be > end")
+    reg = _random_date(start, end)
+    return generate_company_for_date(reg, enforce_checksum=enforce_checksum, formatted=formatted)
+
+
+def get_birth_date(value: str, *, enforce_checksum: bool = True) -> date:
+    """Return the resolved birth/registration date for a kennitala.
+
+    Wraps `parse()` and returns `ParsedKennitala.birth_date`.
+    Raises ValueError if invalid under the selected policy.
+    """
+    return parse(value, enforce_checksum=enforce_checksum).birth_date

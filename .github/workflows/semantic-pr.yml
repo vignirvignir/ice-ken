@@ -28,5 +28,5 @@ jobs:
             ci
             chore
             revert
-            requireScope: true
+          requireScope: true
           wip: true
