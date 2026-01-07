@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # for creating Git tags and GitHub Releases
+      id-token: write   # for OIDC (required for PyPI Trusted Publishing)
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # required for semantic-release to see tags/history
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install python-semantic-release build
+
+      - name: Determine next version and update files
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          semantic-release version
+
+      - name: Build distribution
+        run: |
+          python -m build
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          semantic-release publish
+
+      - name: Publish to PyPI via Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@v1
+        with:
+          # If you want to skip re-uploading the same files
+          skip-existing: true
+
+  testpypi:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # for OIDC (Trusted Publishing)
+    if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build
+
+      - name: Build distribution
+        run: |
+          python -m build
+
+      - name: Publish to TestPyPI via Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true

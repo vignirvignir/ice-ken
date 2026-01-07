@@ -1,0 +1,21 @@
+name: Commitlint
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # ensure full history for commitlint
+
+      - name: Commitlint
+        uses: wagoid/commitlint-github-action@v5
+        with:
+          configFile: .commitlintrc.json

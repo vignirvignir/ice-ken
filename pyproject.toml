@@ -3,14 +3,14 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "example_package"
+name = "ice-ken"
 version = "0.1.0"
-description = "A minimal Python package example"
+description = "Utilities for managing Icelandic national IDs (kennitala) safely and efficiently"
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "GPL-3.0-or-later"}
 authors = [
-    {name = "Example Author", email = "author@example.com"}
+    {name = "Vignir Lydsson"}
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -18,10 +18,33 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
 ]
+
+keywords = ["kennitala", "iceland", "national-id", "validation", "utilities"]
 
 [project.urls]
 Homepage = "https://github.com/vignirvignir/ice-ken"
 Repository = "https://github.com/vignirvignir/ice-ken"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["ice_ken*"]
+
+[tool.semantic_release]
+# Use Conventional Commits to determine the next version.
+branch = "main"
+version_toml = ["pyproject.toml:project.version"]
+changelog_file = "CHANGELOG.md"
+build_command = "python -m build"
+assets = []
+upload_to_pypi = false
+upload_to_release = true
+commit_parser = "angular"
