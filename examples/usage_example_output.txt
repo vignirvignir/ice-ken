@@ -1,0 +1,90 @@
+====================
+Normalize and format
+====================
+Input: 120174 3399
+Digits only: 1201743399
+Formatted: 120174-3399
+
+====================================
+Validation: strict vs relaxed policy
+====================================
+Sample: 1201843599
+Digits: 1201843599
+Strict valid (checksum enforced): False
+Relaxed valid (checksum ignored): True
+Tip: From 2026 policy changes, relaxed may be appropriate for new IDs.
+
+========================
+Parse to structured data
+========================
+Input: 120184-3509
+Parsed:
+  digits: 1201843509
+  formatted: 120184-3509
+  birth_date: 1984-01-12 (YYYY-MM-DD)
+  century_indicator: 9
+  entity_type: individual
+
+========================
+Parse to structured data
+========================
+Input: 490314-6010
+Parsed:
+  digits: 4903146010
+  formatted: 490314-6010
+  birth_date: 2014-03-09 (YYYY-MM-DD)
+  century_indicator: 0
+  entity_type: company
+
+========================
+Masking for safe display
+========================
+Input: 120184-3509
+Masked (default last 4 visible): ******-3509
+Masked (last 2 visible): ******-**09
+Masked (fully hidden): ******-****
+
+=======================================
+Entity detection: individual vs company
+=======================================
+120184-3509 -> individual
+490314-6010 -> company
+
+==================================
+Synthetic dataset marker detection
+==================================
+120184-1409 -> is_dataset_id=True
+120184-1509 -> is_dataset_id=True
+120184-3509 -> is_dataset_id=False
+
+===================
+Generating test IDs
+===================
+Personal (strict, formatted): 231249-2309
+Personal (relaxed, digits): 0805795139
+Company  (strict, formatted): 450496-3329
+Company  (relaxed, digits): 5005208910
+Note: Relaxed IDs may intentionally fail checksum for negative testing.
+
+=============================
+Generating for specific dates
+=============================
+Personal for 1990-05-17: 170590-6199
+Company  for 2012-11-30: 701112-3930
+
+===============================
+Random generation within ranges
+===============================
+Random personal between 1985-01-01 and 1995-12-31: 030885-5469
+Random company  between 2005-01-01 and 2007-12-31: 680605-7260
+
+===========================
+Get birth/registration date
+===========================
+120184-3509 -> 1984-01-12
+
+================================
+Bulk validation pipeline example
+================================
+Valid (relaxed policy): ['120184-3509', '490314-6010', '120174-3399']
+Invalid: ['0000000000']
