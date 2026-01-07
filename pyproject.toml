@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "example_package"
+version = "0.1.0"
+description = "A minimal Python package example"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "GPL-3.0-or-later"}
+authors = [
+    {name = "Example Author", email = "author@example.com"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/vignirvignir/ice-ken"
+Repository = "https://github.com/vignirvignir/ice-ken"
