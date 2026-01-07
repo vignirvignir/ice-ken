@@ -1,26 +1,20 @@
 name: Release
 
 on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
   workflow_dispatch:
 
 jobs:
-  prepare_release_pr:
-    name: Prepare Release PR
+  release:
+    name: Manual Release to PyPI
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
     permissions:
-      contents: write
-      pull-requests: write
+      contents: write   # create commits/tags and GitHub Releases
+      id-token: write   # OIDC for PyPI Trusted Publishing
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.ref_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,89 +28,18 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install python-semantic-release build
 
-      - name: Compute next version (no push)
+      - name: Configure Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version and push tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          semantic-release version --no-push
-          python - <<'PY'
-import tomllib, sys
-with open('pyproject.toml','rb') as f:
-    data = tomllib.load(f)
-print(f"v{data['project']['version']}")
-PY
-        | tee .next_version_tag
-
-      - name: Uncommit version bump to stage changes for PR
-        run: |
-          git reset --soft HEAD~1
-
-      - name: Create Release PR
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: release/semantic-release
-          title: "chore(release): prepare $(cat .next_version_tag)"
-          commit-message: "chore(release): prepare $(cat .next_version_tag)"
-          body: |
-            Automated release preparation.
-
-            - Bump version and update CHANGELOG via semantic-release
-            - After merge, the release job will tag and publish
-          labels: |
-            release
-
-  release:
-    runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
-    environment:
-      name: prod
-    permissions:
-      contents: write   # for creating Git tags and GitHub Releases
-      id-token: write   # for OIDC (required for PyPI Trusted Publishing)
-    concurrency:
-      group: release-${{ github.ref }}
-      cancel-in-progress: true
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # required for semantic-release to see tags/history
-          ref: ${{ github.ref_name }}  # ensure a branch checkout (not detached HEAD)
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: 'pip'
-          cache-dependency-path: 'pyproject.toml'
-
-      - name: Install tools
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install python-semantic-release build
-
-      - name: Ensure tag exists for current version
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          python - <<'PY' > .current_version
-import tomllib
-with open('pyproject.toml','rb') as f:
-    data = tomllib.load(f)
-print(data['project']['version'])
-PY
-          VERSION=$(cat .current_version)
-          git fetch --tags --force
-          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
-            echo "Tag v$VERSION already exists"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git tag -a "v$VERSION" -m "Release $VERSION"
-            git push origin "v$VERSION"
-          fi
+          # Bump project.version, update CHANGELOG, create and push tag
+          semantic-release version
 
       - name: Build distribution
         run: |
@@ -132,46 +55,4 @@ PY
       - name: Publish to PyPI via Trusted Publishing
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          # If you want to skip re-uploading the same files
-          skip-existing: true
-
-  testpypi:
-    runs-on: ubuntu-latest
-    environment:
-      name: prod
-    permissions:
-      id-token: write   # for OIDC (Trusted Publishing)
-      contents: read    # recommended by pypa/gh-action-pypi-publish
-    if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
-    concurrency:
-      group: testpypi-${{ github.ref }}
-      cancel-in-progress: true
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: 'pip'
-          cache-dependency-path: 'pyproject.toml'
-
-      - name: Install build tooling
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install build
-
-      - name: Build distribution
-        run: |
-          python -m build
-
-      - name: Publish to TestPyPI via Trusted Publishing
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
           skip-existing: true
