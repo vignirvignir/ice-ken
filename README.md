@@ -40,8 +40,8 @@ masked = mask(raw)                     # "******-3399"
 print(is_company(raw), is_personal(raw))  # e.g., False True
 
 if valid:
-	info = parse(raw)
-	print(info.birth_date)             # datetime.date(...)
+ info = parse(raw)
+ print(info.birth_date)             # datetime.date(...)
 
 # Parse in relaxed mode (skip checksum enforcement)
 info_relaxed = parse("120160-3379", enforce_checksum=False)
@@ -124,6 +124,37 @@ For a detailed explanation of kennitala structure, century and checksum rules, a
 ### Policy Notice (February 18, 2026)
 
 Registers Iceland will begin issuing kennitalas without a computed Modulus 11 check digit starting Feb 18, 2026. After this date, prefer relaxed validation (`enforce_checksum=False`) unless business requirements mandate the legacy parity check. See [docs/about-kennitala.md](docs/about-kennitala.md) for details and testing guidance.
+
+## Contributing
+
+Contributions are welcome and encouraged! This project aims to provide reliable, well-tested utilities for working with Icelandic kennitalas.
+
+### How to Contribute
+
+1. **Fork the repository** and create your feature branch
+2. **Follow the development setup** in [AGENTS.md](AGENTS.md)
+3. **Add tests** for any new functionality
+4. **Follow Conventional Commits** for commit messages
+5. **Submit a Pull Request** — all PRs are reviewed by the repository owner
+
+### What We're Looking For
+
+- **Bug fixes and improvements** to existing functionality
+- **Additional validation helpers** and utilities
+- **Documentation enhancements** and examples
+- **Test coverage improvements** and edge cases
+- **Performance optimizations**
+- **Support for additional use cases**
+
+### Guidelines
+
+- Keep changes focused and well-documented
+- Ensure all tests pass before submitting
+- Add tests for new features or bug fixes
+- Update documentation when changing APIs
+- Follow the existing code style and patterns
+
+We value all contributions, from typo fixes to major features. The Icelandic tech community benefits when we build robust, open-source tools together!
 
 ## License
 
