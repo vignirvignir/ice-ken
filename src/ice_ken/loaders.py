@@ -6,7 +6,7 @@ import re
 from dataclasses import asdict, dataclass
 from datetime import date
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 import xml.etree.ElementTree as ET
 
 from .kennitala import is_valid, is_company, is_personal, is_dataset_id, parse
@@ -36,7 +36,7 @@ def _text_or_none(elem: ET.Element) -> Optional[str]:
     return txt if txt != "" else None
 
 
-def parse_einstaklingar_xml(path: str | Path) -> List[Dict[str, Any]]:
+def parse_einstaklingar_xml(path: Union[str, Path]) -> List[Dict[str, Any]]:
     path = Path(path)
     xml_text = _read_text(path)
     xml_text = _sanitize_known_issues(xml_text)

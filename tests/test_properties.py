@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 import random
+from typing import Optional
 
 from ice_ken import (
     is_valid,
@@ -10,7 +11,7 @@ from ice_ken import (
 )
 
 
-def _compute_checksum(first8: str) -> int | None:
+def _compute_checksum(first8: str) -> Optional[int]:
     weights = [3, 2, 7, 6, 5, 4, 3, 2]
     total = sum(int(d) * w for d, w in zip(first8, weights))
     remainder = total % 11
