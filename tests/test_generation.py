@@ -179,6 +179,18 @@ class TestGenerateKennitala:
         assert info.birth_date == d
         assert info.entity_type == "company"
 
+    def test_personal_with_target_date(self):
+        d = date(1990, 5, 20)
+        kt = generate_kennitala("personal", target_date=d, formatted=False)
+        assert parse(kt).birth_date == d
+
+    def test_company_with_target_date(self):
+        d = date(2010, 11, 3)
+        kt = generate_kennitala("company", target_date=d, formatted=False)
+        info = parse(kt)
+        assert info.birth_date == d
+        assert info.entity_type == "company"
+
     def test_invalid_kind_raises(self):
         with pytest.raises(ValueError, match="kind must be"):
             generate_kennitala("invalid")  # type: ignore[arg-type]
@@ -215,6 +227,12 @@ class TestGenerateBatch:
     def test_batch_with_date(self):
         d = date(1975, 8, 10)
         batch = generate_batch(10, birth_date=d, formatted=False)
+        for kt in batch:
+            assert parse(kt).birth_date == d
+
+    def test_batch_with_target_date(self):
+        d = date(1975, 8, 10)
+        batch = generate_batch(10, target_date=d, formatted=False)
         for kt in batch:
             assert parse(kt).birth_date == d
 

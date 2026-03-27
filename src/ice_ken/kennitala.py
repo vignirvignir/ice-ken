@@ -382,17 +382,20 @@ def generate_company(
 def generate_kennitala(
     kind: Literal["personal", "company"] = "personal",
     *,
-    birth_date: Optional[date] = None,
+    target_date: Optional[date] = None,
     enforce_checksum: bool = True,
     formatted: bool = True,
+    birth_date: Optional[date] = None,
 ) -> str:
     """Generate a valid kennitala — unified entry point.
 
     Parameters:
         kind: ``"personal"`` (default) or ``"company"``.
-        birth_date: Date to encode. If ``None``, a random date is chosen.
+        target_date: Date to encode (birth date for personal, registration date
+            for company). If ``None``, a random date is chosen.
         enforce_checksum: When True (default), the returned ID passes Modulus 11.
         formatted: When True (default), returns ``"DDMMYY-NNNX"``.
+        birth_date: Deprecated alias for ``target_date``.
 
     Returns:
         A kennitala string.
@@ -400,13 +403,14 @@ def generate_kennitala(
     Raises:
         ValueError: On invalid ``kind`` or unsupported year.
     """
+    effective_date = target_date or birth_date
     if kind == "personal":
         return generate_personal(
-            birth_date=birth_date, enforce_checksum=enforce_checksum, formatted=formatted,
+            birth_date=effective_date, enforce_checksum=enforce_checksum, formatted=formatted,
         )
     if kind == "company":
         return generate_company(
-            reg_date=birth_date, enforce_checksum=enforce_checksum, formatted=formatted,
+            reg_date=effective_date, enforce_checksum=enforce_checksum, formatted=formatted,
         )
     raise ValueError(f"kind must be 'personal' or 'company', got {kind!r}")
 
@@ -415,19 +419,21 @@ def generate_batch(
     count: int,
     kind: Literal["personal", "company"] = "personal",
     *,
-    birth_date: Optional[date] = None,
+    target_date: Optional[date] = None,
     enforce_checksum: bool = True,
     formatted: bool = True,
+    birth_date: Optional[date] = None,
 ) -> List[str]:
     """Generate multiple valid kennitölur.
 
     Parameters:
         count: Number of IDs to generate. Must be >= 0.
         kind: ``"personal"`` (default) or ``"company"``.
-        birth_date: If given, all IDs share this date; otherwise each gets a
+        target_date: If given, all IDs share this date; otherwise each gets a
             random date.
         enforce_checksum: When True (default), all IDs pass Modulus 11.
         formatted: When True (default), returns ``"DDMMYY-NNNX"`` strings.
+        birth_date: Deprecated alias for ``target_date``.
 
     Returns:
         A list of kennitala strings.
@@ -435,11 +441,12 @@ def generate_batch(
     Raises:
         ValueError: On invalid ``count``, ``kind``, or unsupported year.
     """
+    effective_date = target_date or birth_date
     if count < 0:
         raise ValueError("count must be >= 0")
     return [
         generate_kennitala(
-            kind, birth_date=birth_date, enforce_checksum=enforce_checksum, formatted=formatted,
+            kind, target_date=effective_date, enforce_checksum=enforce_checksum, formatted=formatted,
         )
         for _ in range(count)
     ]
