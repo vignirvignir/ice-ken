@@ -315,8 +315,13 @@ def _build_kennitala(
 
 
 # Default date ranges for random generation
-_PERSONAL_DATE_RANGE = (date(1930, 1, 1), date(2025, 12, 31))
-_COMPANY_DATE_RANGE = (date(1990, 1, 1), date(2025, 12, 31))
+_PERSONAL_START = date(1930, 1, 1)
+_COMPANY_START = date(1990, 1, 1)
+
+
+def _default_end_date() -> date:
+    """Return Dec 31 of the current year, capped at 2099 (century limit)."""
+    return date(min(date.today().year, 2099), 12, 31)
 
 
 def generate_personal(
@@ -342,7 +347,7 @@ def generate_personal(
         ValueError: If ``birth_date`` has a year outside 1800–2099.
     """
     if birth_date is None:
-        birth_date = _random_date(*_PERSONAL_DATE_RANGE)
+        birth_date = _random_date(_PERSONAL_START, _default_end_date())
     return _build_kennitala(
         birth_date, company=False, enforce_checksum=enforce_checksum, formatted=formatted,
     )
@@ -373,7 +378,7 @@ def generate_company(
         ValueError: If ``reg_date`` has a year outside 1800–2099.
     """
     if reg_date is None:
-        reg_date = _random_date(*_COMPANY_DATE_RANGE)
+        reg_date = _random_date(_COMPANY_START, _default_end_date())
     return _build_kennitala(
         reg_date, company=True, enforce_checksum=enforce_checksum, formatted=formatted,
     )
