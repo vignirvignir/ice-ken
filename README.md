@@ -147,4 +147,4 @@ For agent and repository workflow details, see [AGENTS.md](AGENTS.md).
 
 ## License
 
-GNU General Public License v3.0 or later. See [LICENSE](LICENSE).
+MIT License. See [LICENSE](LICENSE).
