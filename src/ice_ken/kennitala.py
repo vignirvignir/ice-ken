@@ -75,6 +75,10 @@ class ParsedKennitala:
 def normalize(value: str) -> str:
     """Return only the digits of a kennitala.
 
+    Accepts digits, hyphens, and whitespace. Raises ``ValueError`` if the
+    input contains other characters (letters, punctuation, etc.) which
+    indicate the value is not a kennitala string.
+
     Parameters:
         value: String possibly containing separators like '-' or spaces.
 
@@ -83,9 +87,16 @@ def normalize(value: str) -> str:
 
     Raises:
         TypeError: If ``value`` is not a string.
+        ValueError: If ``value`` contains characters other than digits,
+            hyphens, or whitespace.
     """
     if not isinstance(value, str):
         raise TypeError(f"Expected str, got {type(value).__name__}")
+    for ch in value:
+        if not ("0" <= ch <= "9" or ch in " \t-"):
+            raise ValueError(
+                f"Unexpected character {ch!r} in kennitala string"
+            )
     return "".join(ch for ch in value if "0" <= ch <= "9")
 
 
@@ -188,7 +199,10 @@ def is_valid(value: str, enforce_checksum: bool = False) -> bool:
         Default changed from ``True`` to ``False`` to avoid false negatives
         on newly issued kennitalas.
     """
-    digits = normalize(value)
+    try:
+        digits = normalize(value)
+    except (TypeError, ValueError):
+        return False
     if len(digits) != 10:
         return False
     # Valid century indicator (10th digit)
@@ -260,7 +274,10 @@ def is_company(value: str) -> bool:
     Checks the day field (41–71) and validates the date and century indicator.
     Does not enforce the checksum.
     """
-    digits = normalize(value)
+    try:
+        digits = normalize(value)
+    except (TypeError, ValueError):
+        return False
     return _is_company_digits(digits) and is_valid(digits, enforce_checksum=False)
 
 
@@ -269,7 +286,10 @@ def is_personal(value: str) -> bool:
 
     Validates the date and century indicator. Does not enforce the checksum.
     """
-    digits = normalize(value)
+    try:
+        digits = normalize(value)
+    except (TypeError, ValueError):
+        return False
     if len(digits) != 10 or not digits.isdigit():
         return False
     return not _is_company_digits(digits) and is_valid(digits, enforce_checksum=False)
@@ -284,7 +304,10 @@ def is_dataset_id(value: str) -> bool:
     convention. It does not validate the checksum or date and should be used
     only in test contexts, not for production logic.
     """
-    digits = normalize(value)
+    try:
+        digits = normalize(value)
+    except (TypeError, ValueError):
+        return False
     if len(digits) != 10 or not digits.isdigit():
         return False
     return digits[6:8] in ("14", "15")

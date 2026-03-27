@@ -40,12 +40,18 @@ def test_normalize_rejects_non_string():
 
 
 def test_normalize_rejects_non_ascii_digits():
-    # Fullwidth digits should be stripped (not treated as digits)
-    assert normalize("\uff11\uff12\uff10\uff11\uff16\uff10\uff13\uff13\uff18\uff19") == ""
-    # Superscript digits should be stripped
-    assert normalize("120160\u00b2389") == "120160389"
-    # Arabic-Indic digits should be stripped
-    assert normalize("\u0661\u0662\u0663") == ""
+    # Fullwidth digits should be rejected
+    with pytest.raises(ValueError):
+        normalize("\uff11\uff12\uff10\uff11\uff16\uff10\uff13\uff13\uff18\uff19")
+    # Superscript digits should be rejected
+    with pytest.raises(ValueError):
+        normalize("120160\u00b2389")
+    # Arabic-Indic digits should be rejected
+    with pytest.raises(ValueError):
+        normalize("\u0661\u0662\u0663")
+    # Letters should be rejected
+    with pytest.raises(ValueError):
+        normalize("1201a603389")
 
 
 def test_format_kennitala_success_and_errors():
