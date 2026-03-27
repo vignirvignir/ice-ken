@@ -143,14 +143,14 @@ kt = generate_company()               # e.g. "520312-2190"
 kt = generate_company(reg_date=date(2015, 3, 12))
 
 # Unified entry point
-kt = generate_kennitala("personal", birth_date=date(1985, 1, 1))
+kt = generate_kennitala("personal", target_date=date(1985, 1, 1))
 kt = generate_kennitala("company")
 
 # Batch generation — 100 random personal IDs
 batch = generate_batch(100)
 
 # Batch of company IDs, all sharing a date
-batch = generate_batch(50, "company", birth_date=date(2020, 6, 1))
+batch = generate_batch(50, "company", target_date=date(2020, 6, 1))
 
 # Relaxed mode: structurally valid but checksum intentionally wrong
 kt = generate_personal(enforce_checksum=False)
