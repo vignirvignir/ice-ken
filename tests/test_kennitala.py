@@ -85,6 +85,12 @@ def test_parse_strict_and_relaxed():
     assert info.century_indicator == 9
     assert info.entity_type == "individual"
 
+    # repr should mask the kennitala to prevent PII leakage
+    r = repr(info)
+    assert VALID_PERSONAL_DIGITS not in r
+    assert VALID_PERSONAL not in r
+    assert "******-3389" in r
+
     # Strict parse should fail for checksum-failing variant
     with pytest.raises(ValueError):
         parse("120160-3379", enforce_checksum=True)

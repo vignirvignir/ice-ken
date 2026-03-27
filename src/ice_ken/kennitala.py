@@ -49,13 +49,27 @@ __all__ = [
 ]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class ParsedKennitala:
+    """Structured representation of a parsed kennitala.
+
+    The default ``repr`` masks the ``digits`` and ``formatted`` fields to
+    prevent accidental PII leakage in logs and tracebacks.
+    """
+
     digits: str
     formatted: str
     birth_date: date
     century_indicator: int
     entity_type: str  # "individual" | "company"
+
+    def __repr__(self) -> str:
+        masked = mask(self.formatted)
+        return (
+            f"ParsedKennitala(formatted={masked!r}, "
+            f"birth_date={self.birth_date!r}, "
+            f"entity_type={self.entity_type!r})"
+        )
 
 
 def normalize(value: str) -> str:
