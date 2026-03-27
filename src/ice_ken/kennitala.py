@@ -272,7 +272,8 @@ def _build_kennitala(
     yy = target_date.year % 100
     c = _century_indicator_for_year(target_date.year)
 
-    while True:
+    max_attempts = 1000
+    for _ in range(max_attempts):
         r = random.randint(20, 99)
         first8 = f"{dd:02d}{mm:02d}{yy:02d}{r:02d}"
         if enforce_checksum:
@@ -289,6 +290,10 @@ def _build_kennitala(
                 p = random.choice(choices)
         digits = f"{first8}{p}{c}"
         break
+    else:
+        raise RuntimeError(
+            f"Failed to generate kennitala after {max_attempts} attempts"
+        )
 
     return format_kennitala(digits) if formatted else digits
 
