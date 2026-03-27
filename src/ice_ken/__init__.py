@@ -48,4 +48,9 @@ __all__ = [
     "get_birth_date",
 ]
 
-__version__ = "0.1.0"
+try:
+    from importlib.metadata import version as _version
+
+    __version__ = _version("ice-ken")
+except Exception:
+    __version__ = "0.0.0"
