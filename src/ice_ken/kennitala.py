@@ -258,8 +258,8 @@ def mask(value: str, visible_tail: int = 4) -> str:
     digits = normalize(value)
     if len(digits) != 10:
         raise ValueError("Kennitala must contain exactly 10 digits to mask")
-    if not 0 <= visible_tail <= 10:
-        raise ValueError("visible_tail must be between 0 and 10")
+    if not isinstance(visible_tail, int) or not 0 <= visible_tail <= 10:
+        raise ValueError("visible_tail must be an integer between 0 and 10")
     if visible_tail == 10:
         return format_kennitala(digits)
     tail = digits[-visible_tail:] if visible_tail > 0 else ""
