@@ -3,17 +3,29 @@
 [![Release](https://github.com/vignirvignir/ice-ken/actions/workflows/release.yml/badge.svg)](https://github.com/vignirvignir/ice-ken/actions/workflows/release.yml)
 [![CI](https://github.com/vignirvignir/ice-ken/actions/workflows/ci.yml/badge.svg)](https://github.com/vignirvignir/ice-ken/actions/workflows/ci.yml)
 
-Python library for working with Icelandic national IDs (kennitala).
+A Python library for validating, parsing, formatting, masking, and generating Icelandic national identification numbers (**kennitala** / **kennitölur**). Built for developers working with Icelandic identity systems, government registries, KYC/AML flows, or any application that handles Icelandic personal and company IDs.
+
+Kennitala (plural: kennitölur) is Iceland's national ID system, issued by Registers Iceland (Þjóðskrá Íslands). It serves a similar role to SSN (US), personnummer (Nordics), or national ID numbers in other countries. Every individual and legal entity in Iceland has one.
+
+## Why ice-ken?
+
+- **Zero dependencies** — pure Python, nothing to install beyond the package itself.
+- **Python 3.9–3.13** — tested across all supported versions.
+- **2026-ready** — handles the Feb 2026 policy change where Registers Iceland may issue kennitalas without valid Modulus 11 checksums. Dual validation modes (strict and relaxed) let you choose.
+- **Individuals and companies** — validates and distinguishes both personal IDs (kennitala einstaklinga) and company/legal entity IDs (kennitala lögaðila) using the day+40 rule.
+- **Generation for testing** — create realistic, structurally valid kennitalas for tests, fixtures, and seed data without using real IDs.
+- **Safe masking** — redact kennitalas for logs, UIs, and reports while preserving the format.
+- **Typed** — ships with `py.typed` and full type annotations for mypy/pyright.
 
 ## Overview
 
 Kennitala is a 10-digit identifier typically written as `DDMMYY-NNNX`:
-- Digits 1–6: day, month, year (two digits)
-- Digits 7–8: sequence
-- Digit 9: Modulus 11 checksum (policy exception from 2026)
-- Digit 10: century indicator (`8`→1800s, `9`→1900s, `0`→2000s)
+- Digits 1–6: day (DD), month (MM), year (YY, two digits)
+- Digits 7–8: sequence number
+- Digit 9: Modulus 11 check digit (policy exception from Feb 2026)
+- Digit 10: century indicator (`8`=1800s, `9`=1900s, `0`=2000s)
 
-Companies encode the day as `DD = actual_day + 40` (41–71). When resolving a date, subtract 40 from the day for company IDs.
+Companies and legal entities encode the day as `DD = actual_day + 40` (range 41–71). When resolving a date, subtract 40 from the day for company IDs.
 
 See the full background and rules in [docs/about-kennitala.md](docs/about-kennitala.md).
 

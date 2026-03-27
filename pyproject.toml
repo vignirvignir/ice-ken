@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ice-ken"
 version = "1.1.0"
-description = "Utilities for managing Icelandic national IDs (kennitala) safely and efficiently"
+description = "Validate, parse, format, mask, and generate Icelandic national identification numbers (kennitala / kennitölur)"
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
@@ -25,7 +25,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 
-keywords = ["kennitala", "iceland", "national-id", "validation", "utilities"]
+keywords = ["kennitala", "kennitolur", "iceland", "icelandic", "national-id", "personal-id", "validation", "thjodskra", "registers-iceland"]
 
 [project.urls]
 Homepage = "https://github.com/vignirvignir/ice-ken"
