@@ -473,6 +473,8 @@ def generate_kennitala(
     Raises:
         ValueError: On invalid ``kind`` or unsupported year.
     """
+    if target_date is not None and birth_date is not None:
+        raise ValueError("Pass target_date or birth_date, not both")
     effective_date = target_date or birth_date
     if kind == "personal":
         return generate_personal(
@@ -513,6 +515,8 @@ def generate_batch(
     Raises:
         ValueError: On invalid ``count``, ``kind``, or unsupported year.
     """
+    if target_date is not None and birth_date is not None:
+        raise ValueError("Pass target_date or birth_date, not both")
     effective_date = target_date or birth_date
     if count < 0:
         raise ValueError("count must be >= 0")
