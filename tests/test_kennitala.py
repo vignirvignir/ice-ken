@@ -192,6 +192,36 @@ def test_is_dataset_id_helper():
     assert is_dataset_id("123") is False
 
 
+def test_mask_visible_tail_full():
+    assert mask(VALID_PERSONAL, visible_tail=10) == VALID_PERSONAL
+
+
 def test_mask_errors_on_bad_length():
     with pytest.raises(ValueError):
         mask("123")
+
+
+def test_mask_errors_on_visible_tail_out_of_range():
+    with pytest.raises(ValueError):
+        mask(VALID_PERSONAL, visible_tail=11)
+    with pytest.raises(ValueError):
+        mask(VALID_PERSONAL, visible_tail=-1)
+
+
+def test_is_personal_rejects_invalid_date():
+    assert is_personal("0001010009") is False  # day=00
+    assert is_personal("1213603389") is False  # month=13
+    assert is_personal("3201603389") is False  # day=32
+
+
+def test_is_personal_rejects_invalid_century():
+    assert is_personal(VALID_PERSONAL_DIGITS[:-1] + "1") is False
+
+
+def test_is_company_rejects_invalid_date():
+    assert is_company("4113012000") is False  # month=13
+    assert is_company("4100012000") is False  # month=00
+
+
+def test_is_company_rejects_invalid_century():
+    assert is_company("5201603371") is False  # century=1
