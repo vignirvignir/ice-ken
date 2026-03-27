@@ -177,11 +177,23 @@ def parse(value: str, enforce_checksum: bool = True) -> ParsedKennitala:
 def mask(value: str, visible_tail: int = 4) -> str:
     """Return a masked representation, exposing only the last `visible_tail` digits.
 
-    Example: **** **-**1234
+    Example: mask("1201603389") → "******-3389"
+
+    Parameters:
+        value: A kennitala string (with or without separator).
+        visible_tail: Number of trailing digits to leave visible (0–10).
+
+    Raises:
+        ValueError: If the kennitala doesn't have 10 digits or visible_tail
+            is out of range.
     """
     digits = normalize(value)
     if len(digits) != 10:
         raise ValueError("Kennitala must contain exactly 10 digits to mask")
+    if not 0 <= visible_tail <= 10:
+        raise ValueError("visible_tail must be between 0 and 10")
+    if visible_tail == 10:
+        return format_kennitala(digits)
     tail = digits[-visible_tail:] if visible_tail > 0 else ""
     masked_head = "*" * (10 - len(tail))
     masked = f"{masked_head[0:6]}-{masked_head[6:]}{tail}"
@@ -191,15 +203,22 @@ def mask(value: str, visible_tail: int = 4) -> str:
 def is_company(value: str) -> bool:
     """Return True if the kennitala belongs to a company/legal entity.
 
-    Determination is based on the day field being 41–71 (day + 40 rule).
+    Checks the day field (41–71) and validates the date and century indicator.
+    Does not enforce the checksum.
     """
-    return _is_company_digits(normalize(value))
+    digits = normalize(value)
+    return _is_company_digits(digits) and is_valid(digits, enforce_checksum=False)
 
 
 def is_personal(value: str) -> bool:
-    """Return True if the kennitala belongs to an individual (not a company)."""
+    """Return True if the kennitala belongs to an individual (not a company).
+
+    Validates the date and century indicator. Does not enforce the checksum.
+    """
     digits = normalize(value)
-    return len(digits) == 10 and digits.isdigit() and not _is_company_digits(digits)
+    if len(digits) != 10 or not digits.isdigit():
+        return False
+    return not _is_company_digits(digits) and is_valid(digits, enforce_checksum=False)
 
 
 def is_dataset_id(value: str) -> bool:
