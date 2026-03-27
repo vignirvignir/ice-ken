@@ -141,7 +141,13 @@ def is_valid(value: str, enforce_checksum: bool = True) -> bool:
     - calendar date resolution
 
     Additionally validates checksum (mod 11) iff ``enforce_checksum`` is True.
-    From Feb 18, 2026, newly issued IDs may not satisfy the checksum.
+
+    .. warning::
+
+        From Feb 18, 2026, Registers Iceland may issue kennitalas without
+        valid Modulus 11 checksums. If you are validating user-supplied IDs
+        that may have been issued after this date, pass
+        ``enforce_checksum=False`` to avoid false negatives.
     """
     digits = normalize(value)
     if len(digits) != 10:
@@ -160,6 +166,11 @@ def parse(value: str, enforce_checksum: bool = True) -> ParsedKennitala:
     """Parse a kennitala into structured information.
 
     Raises ValueError if the kennitala is not valid.
+
+    .. warning::
+
+        From Feb 18, 2026, newly issued kennitalas may not have valid
+        checksums. Pass ``enforce_checksum=False`` to accept these IDs.
     """
     digits = normalize(value)
     if len(digits) != 10:
