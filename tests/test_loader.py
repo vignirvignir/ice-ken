@@ -117,3 +117,11 @@ def test_main_output_file(tmp_path):
     data = json.loads(out_file.read_text(encoding="utf-8"))
     assert "Einstaklingar" in data
     assert len(data["Einstaklingar"]) == 6
+
+
+def test_main_mask_flag(capsys):
+    ret = main([str(SAMPLE_XML), "--mask"])
+    assert ret == 0
+    captured = capsys.readouterr()
+    # Masked output should contain asterisks and no full 10-digit kennitalas
+    assert "******" in captured.out

@@ -24,7 +24,7 @@ except ImportError:
     # this fallback with trusted XML input.
     _xml_fromstring = ET.fromstring
 
-from .kennitala import is_valid, is_company, is_personal, is_dataset_id, parse
+from .kennitala import is_valid, is_company, is_personal, is_dataset_id, parse, mask
 
 
 def _read_text(path: Path) -> str:
@@ -110,10 +110,21 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument(
         "--out", type=str, default=None, help="Write validated JSON to this path"
     )
+    p.add_argument(
+        "--mask", action="store_true", default=False,
+        help="Mask kennitala values in output to prevent PII exposure",
+    )
     args = p.parse_args(argv)
 
     records = parse_einstaklingar_xml(args.xml)
     validated = validate_records(records)
+    if args.mask:
+        for rec in validated:
+            kt = rec.get("Kennitala", "")
+            try:
+                rec["Kennitala"] = mask(kt)
+            except ValueError:
+                pass  # leave invalid/short values as-is
     if args.out:
         out_path = Path(args.out)
         out_path.write_text(
