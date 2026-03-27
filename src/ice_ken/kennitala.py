@@ -320,6 +320,10 @@ def _build_kennitala(
     field is offset by +40. Retries with different sequence numbers until a
     valid checksum is found (when ``enforce_checksum`` is True) or deliberately
     avoids the correct checksum (when False).
+
+    Uses Python's ``random`` module (Mersenne Twister), which is **not**
+    cryptographically secure. Generated IDs are suitable for test fixtures
+    and seed data, but must not be used as secrets or security tokens.
     """
     dd = target_date.day + (40 if company else 0)
     mm = target_date.month
@@ -479,7 +483,9 @@ def generate_batch(
         birth_date: Deprecated alias for ``target_date``.
 
     Returns:
-        A list of kennitala strings.
+        A list of kennitala strings. Duplicates are possible, especially
+        when ``target_date`` is fixed — the sequence space is ~73 unique
+        IDs per date with checksum enforcement.
 
     Raises:
         ValueError: On invalid ``count``, ``kind``, or unsupported year.
@@ -487,6 +493,8 @@ def generate_batch(
     effective_date = target_date or birth_date
     if count < 0:
         raise ValueError("count must be >= 0")
+    if count > 100_000:
+        raise ValueError("count must be <= 100000")
     return [
         generate_kennitala(
             kind, target_date=effective_date, enforce_checksum=enforce_checksum, formatted=formatted,
