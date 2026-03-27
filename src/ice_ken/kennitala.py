@@ -72,7 +72,7 @@ def normalize(value: str) -> str:
     """
     if not isinstance(value, str):
         raise TypeError(f"Expected str, got {type(value).__name__}")
-    return "".join(ch for ch in value if ch.isdigit())
+    return "".join(ch for ch in value if "0" <= ch <= "9")
 
 
 def format_kennitala(value: str) -> str:

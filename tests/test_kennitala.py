@@ -37,6 +37,15 @@ def test_normalize_rejects_non_string():
         normalize(1201603389)  # type: ignore[arg-type]
 
 
+def test_normalize_rejects_non_ascii_digits():
+    # Fullwidth digits should be stripped (not treated as digits)
+    assert normalize("\uff11\uff12\uff10\uff11\uff16\uff10\uff13\uff13\uff18\uff19") == ""
+    # Superscript digits should be stripped
+    assert normalize("120160\u00b2389") == "120160389"
+    # Arabic-Indic digits should be stripped
+    assert normalize("\u0661\u0662\u0663") == ""
+
+
 def test_format_kennitala_success_and_errors():
     assert format_kennitala(VALID_PERSONAL_DIGITS) == VALID_PERSONAL
     with pytest.raises(ValueError):
