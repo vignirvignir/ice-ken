@@ -153,7 +153,7 @@ def _compute_checksum_for_first8(first8: str) -> int | None:
     return check
 
 
-def is_valid(value: str, enforce_checksum: bool = True) -> bool:
+def is_valid(value: str, enforce_checksum: bool = False) -> bool:
     """Return True if the kennitala is valid under the selected policy.
 
     Always validates:
@@ -163,12 +163,16 @@ def is_valid(value: str, enforce_checksum: bool = True) -> bool:
 
     Additionally validates checksum (mod 11) iff ``enforce_checksum`` is True.
 
-    .. warning::
+    .. note::
 
-        From Feb 18, 2026, Registers Iceland may issue kennitalas without
-        valid Modulus 11 checksums. If you are validating user-supplied IDs
-        that may have been issued after this date, pass
-        ``enforce_checksum=False`` to avoid false negatives.
+        Since Feb 18, 2026, Registers Iceland may issue kennitalas without
+        valid Modulus 11 checksums. The default ``enforce_checksum=False``
+        accepts these IDs. Pass ``enforce_checksum=True`` if you need to
+        verify the checksum for IDs known to predate the policy change.
+
+    .. versionchanged:: 2.0.0
+        Default changed from ``True`` to ``False`` to avoid false negatives
+        on newly issued kennitalas.
     """
     digits = normalize(value)
     if len(digits) != 10:
@@ -183,15 +187,14 @@ def is_valid(value: str, enforce_checksum: bool = True) -> bool:
     return _checksum_ok(digits) if enforce_checksum else True
 
 
-def parse(value: str, enforce_checksum: bool = True) -> ParsedKennitala:
+def parse(value: str, enforce_checksum: bool = False) -> ParsedKennitala:
     """Parse a kennitala into structured information.
 
     Raises ValueError if the kennitala is not valid.
 
-    .. warning::
-
-        From Feb 18, 2026, newly issued kennitalas may not have valid
-        checksums. Pass ``enforce_checksum=False`` to accept these IDs.
+    .. versionchanged:: 2.0.0
+        Default changed from ``True`` to ``False`` to avoid rejecting
+        newly issued kennitalas without valid checksums.
     """
     digits = normalize(value)
     if len(digits) != 10:
@@ -535,7 +538,7 @@ def random_company(
     return generate_company(reg_date=reg, enforce_checksum=enforce_checksum, formatted=formatted)
 
 
-def get_birth_date(value: str, *, enforce_checksum: bool = True) -> date:
+def get_birth_date(value: str, *, enforce_checksum: bool = False) -> date:
     """Return the resolved birth/registration date for a kennitala.
 
     Wraps `parse()` and returns `ParsedKennitala.birth_date`.

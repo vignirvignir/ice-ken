@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 
 from ice_ken import (
@@ -54,10 +56,13 @@ def test_format_kennitala_success_and_errors():
 
 def test_is_valid_strict_and_relaxed_personal():
     assert is_valid(VALID_PERSONAL) is True
+    assert is_valid(VALID_PERSONAL, enforce_checksum=True) is True
     # Alter checksum to force failure in strict mode but pass in relaxed
     bad_checksum = "120160-3379"
-    assert is_valid(bad_checksum) is False
+    assert is_valid(bad_checksum, enforce_checksum=True) is False
     assert is_valid(bad_checksum, enforce_checksum=False) is True
+    # Default (relaxed) accepts bad checksum
+    assert is_valid(bad_checksum) is True
 
 
 def test_is_valid_relaxed_company_and_entity_detection():
@@ -82,10 +87,14 @@ def test_parse_strict_and_relaxed():
 
     # Strict parse should fail for checksum-failing variant
     with pytest.raises(ValueError):
-        parse("120160-3379")
+        parse("120160-3379", enforce_checksum=True)
+
+    # Default (relaxed) parse succeeds for bad checksum
+    info_relaxed = parse("120160-3379")
+    assert info_relaxed.digits == "1201603379"
 
     # Relaxed parse should succeed for company example
-    company_info = parse(COMPANY_RELAXED, enforce_checksum=False)
+    company_info = parse(COMPANY_RELAXED)
     assert company_info.formatted == COMPANY_RELAXED
     assert company_info.entity_type == "company"
     # Day should resolve to 12 after subtracting 40
@@ -176,13 +185,13 @@ def test_generate_personal_and_company():
         assert is_company(kt)
         assert is_valid(kt, enforce_checksum=False)
 
-    # Relaxed-generated IDs should typically fail strict checksum
+    # Relaxed-generated IDs should fail strict checksum
     for _ in range(5):
         kt_relaxed = generate_personal(enforce_checksum=False)
-        assert is_valid(kt_relaxed) is False
+        assert is_valid(kt_relaxed, enforce_checksum=True) is False
     for _ in range(5):
         kt_relaxed_c = generate_company(enforce_checksum=False)
-        assert is_valid(kt_relaxed_c) is False
+        assert is_valid(kt_relaxed_c, enforce_checksum=True) is False
 
     # Unformatted output should be 10 digits without hyphen
     kt_person_digits = generate_personal(enforce_checksum=True, formatted=False)
@@ -248,6 +257,8 @@ def test_get_birth_date_invalid_input():
     with pytest.raises(ValueError):
         get_birth_date("123")
     with pytest.raises(ValueError):
-        get_birth_date("120160-3379")  # bad checksum, strict mode
+        get_birth_date("120160-3379", enforce_checksum=True)  # bad checksum, strict mode
+    # Default (relaxed) accepts bad checksum
+    assert get_birth_date("120160-3379") == date(1960, 1, 12)
     with pytest.raises(ValueError):
         get_birth_date("0000000000")  # invalid date
