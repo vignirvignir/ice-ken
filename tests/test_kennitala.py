@@ -12,6 +12,7 @@ from ice_ken import (
     ParsedKennitala,
     generate_personal,
     generate_company,
+    get_birth_date,
 )
 
 
@@ -232,3 +233,12 @@ def test_is_company_rejects_invalid_date():
 
 def test_is_company_rejects_invalid_century():
     assert is_company("5201603371") is False  # century=1
+
+
+def test_get_birth_date_invalid_input():
+    with pytest.raises(ValueError):
+        get_birth_date("123")
+    with pytest.raises(ValueError):
+        get_birth_date("120160-3379")  # bad checksum, strict mode
+    with pytest.raises(ValueError):
+        get_birth_date("0000000000")  # invalid date
