@@ -3,7 +3,7 @@
 Utilities for managing Icelandic national IDs (kennitala).
 
 This package provides helpers to normalize, validate, format, and
-safely mask kennitala values.
+safely mask kennitala values, as well as generation utilities.
 """
 
 from .kennitala import (
@@ -18,6 +18,13 @@ from .kennitala import (
     ParsedKennitala,
     generate_personal,
     generate_company,
+    generate_kennitala,
+    generate_batch,
+    generate_personal_for_date,
+    generate_company_for_date,
+    random_personal,
+    random_company,
+    get_birth_date,
 )
 
 __all__ = [
@@ -32,6 +39,13 @@ __all__ = [
     "ParsedKennitala",
     "generate_personal",
     "generate_company",
+    "generate_kennitala",
+    "generate_batch",
+    "generate_personal_for_date",
+    "generate_company_for_date",
+    "random_personal",
+    "random_company",
+    "get_birth_date",
 ]
 
 __version__ = "0.1.0"

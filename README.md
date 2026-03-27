@@ -57,8 +57,12 @@ print(is_company(raw), is_personal(raw))
 - **`mask(value, visible_tail=4)`**: masked display keeping last digits.
 - **`is_company(value)` / `is_personal(value)`**: entity detection.
 - **`is_dataset_id(value)`**: test-only helper for synthetic dataset marker (`14`/`15` in digits 7–8).
-- **Generators**: `generate_personal`, `generate_company`, plus date-specific variants and `random_*` helpers. All support `enforce_checksum` and `formatted` options.
+- **`generate_personal(birth_date=None, ...)`**: generate a personal kennitala, optionally for a specific date.
+- **`generate_company(reg_date=None, ...)`**: generate a company kennitala, optionally for a specific date.
+- **`generate_kennitala(kind, birth_date=None, ...)`**: unified generator for either type.
+- **`generate_batch(count, kind, ...)`**: generate multiple kennitölur at once.
 - **`get_birth_date(value, enforce_checksum=True)`**: resolve the birth/registration date.
+- Additional aliases: `generate_personal_for_date`, `generate_company_for_date`, `random_personal`, `random_company`.
 
 ## Validation Modes
 
@@ -97,6 +101,50 @@ print(is_dataset_id("120160-1489"))  # True
 ```
 
 Do not rely on this marker in production logic.
+
+## Generation
+
+Generate structurally valid kennitölur for testing, seeding databases, or any scenario where you need realistic IDs.
+
+```python
+from datetime import date
+from ice_ken import (
+    generate_personal,
+    generate_company,
+    generate_kennitala,
+    generate_batch,
+)
+
+# Random personal kennitala (checksum-valid, formatted)
+kt = generate_personal()              # e.g. "120585-2389"
+
+# Personal kennitala for a specific birth date
+kt = generate_personal(birth_date=date(1990, 5, 20))  # encodes 20-05-90
+
+# Normalized (digits only) output
+kt = generate_personal(formatted=False)     # e.g. "1205852389"
+
+# Random company kennitala
+kt = generate_company()               # e.g. "520312-2190"
+
+# Company kennitala for a specific registration date
+kt = generate_company(reg_date=date(2015, 3, 12))
+
+# Unified entry point
+kt = generate_kennitala("personal", birth_date=date(1985, 1, 1))
+kt = generate_kennitala("company")
+
+# Batch generation — 100 random personal IDs
+batch = generate_batch(100)
+
+# Batch of company IDs, all sharing a date
+batch = generate_batch(50, "company", birth_date=date(2020, 6, 1))
+
+# Relaxed mode: structurally valid but checksum intentionally wrong
+kt = generate_personal(enforce_checksum=False)
+```
+
+All generators accept `enforce_checksum` (default `True`) and `formatted` (default `True`).
 
 ## Documentation
 
