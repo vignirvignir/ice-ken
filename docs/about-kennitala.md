@@ -170,7 +170,7 @@ mask(raw)                             # "******-3389" (default tail=4)
 
 # Generating test IDs
 kt_person = generate_personal()                     # Strict checksum
-kt_person_relaxed = generate_personal(False)        # Relaxed
-kt_company = generate_company()                     # Strict
-kt_company_relaxed = generate_company(False)        # Relaxed
+kt_person_relaxed = generate_personal(enforce_checksum=False)   # Relaxed
+kt_company = generate_company()                                 # Strict
+kt_company_relaxed = generate_company(enforce_checksum=False)   # Relaxed
 ```

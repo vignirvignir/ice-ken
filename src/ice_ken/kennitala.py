@@ -49,17 +49,35 @@ __all__ = [
 ]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class ParsedKennitala:
+    """Structured representation of a parsed kennitala.
+
+    The default ``repr`` masks the ``digits`` and ``formatted`` fields to
+    prevent accidental PII leakage in logs and tracebacks.
+    """
+
     digits: str
     formatted: str
     birth_date: date
     century_indicator: int
     entity_type: str  # "individual" | "company"
 
+    def __repr__(self) -> str:
+        masked = mask(self.formatted)
+        return (
+            f"ParsedKennitala(formatted={masked!r}, "
+            f"birth_date={self.birth_date!r}, "
+            f"entity_type={self.entity_type!r})"
+        )
+
 
 def normalize(value: str) -> str:
     """Return only the digits of a kennitala.
+
+    Accepts digits, hyphens, and whitespace. Raises ``ValueError`` if the
+    input contains other characters (letters, punctuation, etc.) which
+    indicate the value is not a kennitala string.
 
     Parameters:
         value: String possibly containing separators like '-' or spaces.
@@ -69,10 +87,17 @@ def normalize(value: str) -> str:
 
     Raises:
         TypeError: If ``value`` is not a string.
+        ValueError: If ``value`` contains characters other than digits,
+            hyphens, or whitespace.
     """
     if not isinstance(value, str):
         raise TypeError(f"Expected str, got {type(value).__name__}")
-    return "".join(ch for ch in value if ch.isdigit())
+    for ch in value:
+        if not ("0" <= ch <= "9" or ch in " \t-"):
+            raise ValueError(
+                f"Unexpected character {ch!r} in kennitala string"
+            )
+    return "".join(ch for ch in value if "0" <= ch <= "9")
 
 
 def format_kennitala(value: str) -> str:
@@ -153,7 +178,7 @@ def _compute_checksum_for_first8(first8: str) -> int | None:
     return check
 
 
-def is_valid(value: str, enforce_checksum: bool = True) -> bool:
+def is_valid(value: str, enforce_checksum: bool = False) -> bool:
     """Return True if the kennitala is valid under the selected policy.
 
     Always validates:
@@ -163,14 +188,21 @@ def is_valid(value: str, enforce_checksum: bool = True) -> bool:
 
     Additionally validates checksum (mod 11) iff ``enforce_checksum`` is True.
 
-    .. warning::
+    .. note::
 
-        From Feb 18, 2026, Registers Iceland may issue kennitalas without
-        valid Modulus 11 checksums. If you are validating user-supplied IDs
-        that may have been issued after this date, pass
-        ``enforce_checksum=False`` to avoid false negatives.
+        Since Feb 18, 2026, Registers Iceland may issue kennitalas without
+        valid Modulus 11 checksums. The default ``enforce_checksum=False``
+        accepts these IDs. Pass ``enforce_checksum=True`` if you need to
+        verify the checksum for IDs known to predate the policy change.
+
+    .. versionchanged:: 2.0.0
+        Default changed from ``True`` to ``False`` to avoid false negatives
+        on newly issued kennitalas.
     """
-    digits = normalize(value)
+    try:
+        digits = normalize(value)
+    except (TypeError, ValueError):
+        return False
     if len(digits) != 10:
         return False
     # Valid century indicator (10th digit)
@@ -183,15 +215,14 @@ def is_valid(value: str, enforce_checksum: bool = True) -> bool:
     return _checksum_ok(digits) if enforce_checksum else True
 
 
-def parse(value: str, enforce_checksum: bool = True) -> ParsedKennitala:
+def parse(value: str, enforce_checksum: bool = False) -> ParsedKennitala:
     """Parse a kennitala into structured information.
 
     Raises ValueError if the kennitala is not valid.
 
-    .. warning::
-
-        From Feb 18, 2026, newly issued kennitalas may not have valid
-        checksums. Pass ``enforce_checksum=False`` to accept these IDs.
+    .. versionchanged:: 2.0.0
+        Default changed from ``True`` to ``False`` to avoid rejecting
+        newly issued kennitalas without valid checksums.
     """
     digits = normalize(value)
     if len(digits) != 10:
@@ -227,8 +258,8 @@ def mask(value: str, visible_tail: int = 4) -> str:
     digits = normalize(value)
     if len(digits) != 10:
         raise ValueError("Kennitala must contain exactly 10 digits to mask")
-    if not 0 <= visible_tail <= 10:
-        raise ValueError("visible_tail must be between 0 and 10")
+    if not isinstance(visible_tail, int) or not 0 <= visible_tail <= 10:
+        raise ValueError("visible_tail must be an integer between 0 and 10")
     if visible_tail == 10:
         return format_kennitala(digits)
     tail = digits[-visible_tail:] if visible_tail > 0 else ""
@@ -243,7 +274,10 @@ def is_company(value: str) -> bool:
     Checks the day field (41–71) and validates the date and century indicator.
     Does not enforce the checksum.
     """
-    digits = normalize(value)
+    try:
+        digits = normalize(value)
+    except (TypeError, ValueError):
+        return False
     return _is_company_digits(digits) and is_valid(digits, enforce_checksum=False)
 
 
@@ -252,7 +286,10 @@ def is_personal(value: str) -> bool:
 
     Validates the date and century indicator. Does not enforce the checksum.
     """
-    digits = normalize(value)
+    try:
+        digits = normalize(value)
+    except (TypeError, ValueError):
+        return False
     if len(digits) != 10 or not digits.isdigit():
         return False
     return not _is_company_digits(digits) and is_valid(digits, enforce_checksum=False)
@@ -267,7 +304,10 @@ def is_dataset_id(value: str) -> bool:
     convention. It does not validate the checksum or date and should be used
     only in test contexts, not for production logic.
     """
-    digits = normalize(value)
+    try:
+        digits = normalize(value)
+    except (TypeError, ValueError):
+        return False
     if len(digits) != 10 or not digits.isdigit():
         return False
     return digits[6:8] in ("14", "15")
@@ -303,6 +343,10 @@ def _build_kennitala(
     field is offset by +40. Retries with different sequence numbers until a
     valid checksum is found (when ``enforce_checksum`` is True) or deliberately
     avoids the correct checksum (when False).
+
+    Uses Python's ``random`` module (Mersenne Twister), which is **not**
+    cryptographically secure. Generated IDs are suitable for test fixtures
+    and seed data, but must not be used as secrets or security tokens.
     """
     dd = target_date.day + (40 if company else 0)
     mm = target_date.month
@@ -429,6 +473,8 @@ def generate_kennitala(
     Raises:
         ValueError: On invalid ``kind`` or unsupported year.
     """
+    if target_date is not None and birth_date is not None:
+        raise ValueError("Pass target_date or birth_date, not both")
     effective_date = target_date or birth_date
     if kind == "personal":
         return generate_personal(
@@ -462,14 +508,20 @@ def generate_batch(
         birth_date: Deprecated alias for ``target_date``.
 
     Returns:
-        A list of kennitala strings.
+        A list of kennitala strings. Duplicates are possible, especially
+        when ``target_date`` is fixed — the sequence space is ~73 unique
+        IDs per date with checksum enforcement.
 
     Raises:
         ValueError: On invalid ``count``, ``kind``, or unsupported year.
     """
+    if target_date is not None and birth_date is not None:
+        raise ValueError("Pass target_date or birth_date, not both")
     effective_date = target_date or birth_date
     if count < 0:
         raise ValueError("count must be >= 0")
+    if count > 100_000:
+        raise ValueError("count must be <= 100000")
     return [
         generate_kennitala(
             kind, target_date=effective_date, enforce_checksum=enforce_checksum, formatted=formatted,
@@ -535,7 +587,7 @@ def random_company(
     return generate_company(reg_date=reg, enforce_checksum=enforce_checksum, formatted=formatted)
 
 
-def get_birth_date(value: str, *, enforce_checksum: bool = True) -> date:
+def get_birth_date(value: str, *, enforce_checksum: bool = False) -> date:
     """Return the resolved birth/registration date for a kennitala.
 
     Wraps `parse()` and returns `ParsedKennitala.birth_date`.

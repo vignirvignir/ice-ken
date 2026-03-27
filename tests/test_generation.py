@@ -37,7 +37,7 @@ class TestGeneratePersonal:
             kt = generate_personal(enforce_checksum=False)
             assert is_valid(kt, enforce_checksum=False)
             assert is_personal(kt)
-            assert is_valid(kt) is False
+            assert is_valid(kt, enforce_checksum=True) is False
 
     def test_with_birth_date(self):
         d = date(1985, 7, 14)
@@ -119,7 +119,7 @@ class TestGenerateCompany:
             kt = generate_company(enforce_checksum=False)
             assert is_valid(kt, enforce_checksum=False)
             assert is_company(kt)
-            assert is_valid(kt) is False
+            assert is_valid(kt, enforce_checksum=True) is False
 
     def test_with_reg_date(self):
         d = date(2012, 3, 5)
@@ -198,7 +198,7 @@ class TestGenerateKennitala:
     def test_relaxed(self):
         kt = generate_kennitala(enforce_checksum=False)
         assert is_valid(kt, enforce_checksum=False)
-        assert is_valid(kt) is False
+        assert is_valid(kt, enforce_checksum=True) is False
 
 
 # ---------------------------------------------------------------------------
@@ -251,7 +251,7 @@ class TestGenerateBatch:
         batch = generate_batch(20, enforce_checksum=False)
         for kt in batch:
             assert is_valid(kt, enforce_checksum=False)
-            assert is_valid(kt) is False
+            assert is_valid(kt, enforce_checksum=True) is False
 
 
 # ---------------------------------------------------------------------------

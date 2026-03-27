@@ -50,10 +50,10 @@ raw = "120174-3399"
 digits = normalize(raw)              # "1201743399"
 print(format_kennitala(digits))      # "120174-3399"
 
-print(is_valid(raw))                 # strict (checksum enforced)
-print(is_valid(raw, enforce_checksum=False))  # relaxed
+print(is_valid(raw))                 # relaxed (default since 2.0)
+print(is_valid(raw, enforce_checksum=True))   # strict (checksum enforced)
 
-info = parse(raw)                    # raises on invalid (strict by default)
+info = parse(raw)                    # raises on invalid (relaxed by default)
 print(info.birth_date, info.entity_type)
 
 print(mask(raw))                     # "******-3399"
@@ -64,8 +64,8 @@ print(is_company(raw), is_personal(raw))
 
 - **`normalize(value)`**: return digits-only string.
 - **`format_kennitala(value)`**: format as `DDMMYY-NNNX`.
-- **`is_valid(value, enforce_checksum=True)`**: structural + date validation; optionally enforce checksum.
-- **`parse(value, enforce_checksum=True)`**: return `ParsedKennitala` with `digits`, `formatted`, `birth_date`, `entity_type`, `century_indicator`.
+- **`is_valid(value, enforce_checksum=False)`**: structural + date validation; optionally enforce checksum.
+- **`parse(value, enforce_checksum=False)`**: return `ParsedKennitala` with `digits`, `formatted`, `birth_date`, `entity_type`, `century_indicator`.
 - **`mask(value, visible_tail=4)`**: masked display keeping last digits.
 - **`is_company(value)` / `is_personal(value)`**: entity detection.
 - **`is_dataset_id(value)`**: test-only helper for synthetic dataset marker (`14`/`15` in digits 7–8).
@@ -73,23 +73,23 @@ print(is_company(raw), is_personal(raw))
 - **`generate_company(reg_date=None, ...)`**: generate a company kennitala, optionally for a specific date.
 - **`generate_kennitala(kind, birth_date=None, ...)`**: unified generator for either type.
 - **`generate_batch(count, kind, ...)`**: generate multiple kennitölur at once.
-- **`get_birth_date(value, enforce_checksum=True)`**: resolve the birth/registration date.
+- **`get_birth_date(value, enforce_checksum=False)`**: resolve the birth/registration date.
 - Additional aliases: `generate_personal_for_date`, `generate_company_for_date`, `random_personal`, `random_company`.
 
 ## Validation Modes
 
-- **Strict**: enforce Modulus 11 (9th digit).
-- **Relaxed**: skip checksum while enforcing structure and date.
+- **Relaxed** (default): validates structure, date, and century indicator. Skips checksum.
+- **Strict**: additionally enforces Modulus 11 checksum (9th digit).
 
 ```python
 from ice_ken import is_valid
 
-print(is_valid("120160-3389"))                         # True (passes checksum)
-print(is_valid("120160-3379", enforce_checksum=False))  # True (relaxed)
-print(is_valid("120160-3379"))                          # False (fails checksum)
+print(is_valid("120160-3389"))                          # True (relaxed, default)
+print(is_valid("120160-3379"))                          # True (relaxed, bad checksum ok)
+print(is_valid("120160-3379", enforce_checksum=True))   # False (strict, fails checksum)
 ```
 
-Policy notice: From February 18, 2026, Registers Iceland may issue kennitalas without a computed checksum. Prefer relaxed validation when appropriate. Details in [docs/about-kennitala.md](docs/about-kennitala.md).
+Since February 18, 2026, Registers Iceland issues kennitalas without a computed checksum. The default relaxed mode accepts these IDs. Use `enforce_checksum=True` only when you need to verify the checksum for pre-2026 IDs. Details in [docs/about-kennitala.md](docs/about-kennitala.md).
 
 ## Companies vs Individuals
 
@@ -143,14 +143,14 @@ kt = generate_company()               # e.g. "520312-2190"
 kt = generate_company(reg_date=date(2015, 3, 12))
 
 # Unified entry point
-kt = generate_kennitala("personal", birth_date=date(1985, 1, 1))
+kt = generate_kennitala("personal", target_date=date(1985, 1, 1))
 kt = generate_kennitala("company")
 
 # Batch generation — 100 random personal IDs
 batch = generate_batch(100)
 
 # Batch of company IDs, all sharing a date
-batch = generate_batch(50, "company", birth_date=date(2020, 6, 1))
+batch = generate_batch(50, "company", target_date=date(2020, 6, 1))
 
 # Relaxed mode: structurally valid but checksum intentionally wrong
 kt = generate_personal(enforce_checksum=False)

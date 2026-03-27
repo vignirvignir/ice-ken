@@ -16,11 +16,11 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0  # ensure full history for commitlint
 
       - name: Commitlint
-        uses: wagoid/commitlint-github-action@v5
+        uses: wagoid/commitlint-github-action@e399437c83a8cc31c2760f7698154fd084061743 # v5
         with:
           configFile: .commitlintrc.json

@@ -11,13 +11,20 @@ import xml.etree.ElementTree as ET
 try:
     from defusedxml.ElementTree import fromstring as _xml_fromstring
 except ImportError:
-    # Python's C-accelerated XMLParser (default since 3.x) does not resolve
-    # external entities, so ET.fromstring is safe for untrusted input in
-    # practice.  Install defusedxml for additional protections (e.g. entity
-    # expansion limits).
+    import warnings as _warnings
+
+    _warnings.warn(
+        "defusedxml is not installed. XML parsing falls back to the standard "
+        "library, which is vulnerable to entity expansion (billion laughs) DoS. "
+        "Install defusedxml for safe XML parsing: pip install defusedxml",
+        stacklevel=2,
+    )
+    # stdlib XMLParser blocks external entities (XXE) since Python 3.x, but
+    # does NOT block internal entity expansion (billion laughs). Only use
+    # this fallback with trusted XML input.
     _xml_fromstring = ET.fromstring
 
-from .kennitala import is_valid, is_company, is_personal, is_dataset_id, parse
+from .kennitala import is_valid, is_company, is_personal, is_dataset_id, parse, mask
 
 
 def _read_text(path: Path) -> str:
@@ -103,10 +110,21 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument(
         "--out", type=str, default=None, help="Write validated JSON to this path"
     )
+    p.add_argument(
+        "--mask", action="store_true", default=False,
+        help="Mask kennitala values in output to prevent PII exposure",
+    )
     args = p.parse_args(argv)
 
     records = parse_einstaklingar_xml(args.xml)
     validated = validate_records(records)
+    if args.mask:
+        for rec in validated:
+            kt = rec.get("Kennitala", "")
+            try:
+                rec["Kennitala"] = mask(kt)
+            except ValueError:
+                pass  # leave invalid/short values as-is
     if args.out:
         out_path = Path(args.out)
         out_path.write_text(
