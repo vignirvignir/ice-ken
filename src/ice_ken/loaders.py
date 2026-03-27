@@ -9,6 +9,17 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 import xml.etree.ElementTree as ET
 
+try:
+    from defusedxml.ElementTree import fromstring as _xml_fromstring
+except ImportError:
+
+    def _xml_fromstring(text: str) -> ET.Element:
+        # Disable external entity resolution when defusedxml is not installed.
+        parser = ET.XMLParser()
+        parser.entity = {}  # type: ignore[attr-defined]
+        parser.feed(text)
+        return parser.close()
+
 from .kennitala import is_valid, is_company, is_personal, is_dataset_id, parse
 
 
@@ -40,7 +51,7 @@ def parse_einstaklingar_xml(path: Union[str, Path]) -> List[Dict[str, Any]]:
     path = Path(path)
     xml_text = _read_text(path)
     xml_text = _sanitize_known_issues(xml_text)
-    root = ET.fromstring(xml_text)
+    root = _xml_fromstring(xml_text)
     if root.tag != "Einstaklingar":
         raise ValueError("Unexpected root element; expected 'Einstaklingar'")
     records: List[Dict[str, Any]] = []
