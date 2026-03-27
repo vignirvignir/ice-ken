@@ -1,5 +1,7 @@
 name: Conventional Commits
 
+# SECURITY: This workflow uses pull_request_target to write check statuses on
+# fork PRs. It MUST NEVER check out or execute code from the PR head branch.
 on:
   pull_request_target:
     types: [opened, edited, synchronize]
@@ -8,7 +10,6 @@ on:
 permissions:
   contents: read
   pull-requests: read
-  checks: write
   statuses: write
 
 
