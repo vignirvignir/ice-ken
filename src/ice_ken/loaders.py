@@ -11,13 +11,11 @@ import xml.etree.ElementTree as ET
 try:
     from defusedxml.ElementTree import fromstring as _xml_fromstring
 except ImportError:
-
-    def _xml_fromstring(text: str) -> ET.Element:
-        # Disable external entity resolution when defusedxml is not installed.
-        parser = ET.XMLParser()
-        parser.entity = {}  # type: ignore[attr-defined]
-        parser.feed(text)
-        return parser.close()
+    # Python's C-accelerated XMLParser (default since 3.x) does not resolve
+    # external entities, so ET.fromstring is safe for untrusted input in
+    # practice.  Install defusedxml for additional protections (e.g. entity
+    # expansion limits).
+    _xml_fromstring = ET.fromstring
 
 from .kennitala import is_valid, is_company, is_personal, is_dataset_id, parse
 
