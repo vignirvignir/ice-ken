@@ -24,8 +24,29 @@ This module provides:
 
 from dataclasses import dataclass
 from datetime import date
-from typing import List, Literal, Optional
+from typing import Literal
 import random
+
+__all__ = [
+    "ParsedKennitala",
+    "normalize",
+    "format_kennitala",
+    "is_valid",
+    "parse",
+    "mask",
+    "is_company",
+    "is_personal",
+    "is_dataset_id",
+    "generate_personal",
+    "generate_company",
+    "generate_kennitala",
+    "generate_batch",
+    "generate_personal_for_date",
+    "generate_company_for_date",
+    "random_personal",
+    "random_company",
+    "get_birth_date",
+]
 
 
 @dataclass(frozen=True)
@@ -65,7 +86,7 @@ def format_kennitala(value: str) -> str:
     return f"{digits[0:6]}-{digits[6:10]}"
 
 
-def _century_base(indicator: int) -> Optional[int]:
+def _century_base(indicator: int) -> int | None:
     if indicator == 8:
         return 1800
     if indicator == 9:
@@ -75,7 +96,7 @@ def _century_base(indicator: int) -> Optional[int]:
     return None
 
 
-def _resolve_birth_date(digits: str) -> Optional[date]:
+def _resolve_birth_date(digits: str) -> date | None:
     # digits: 10-digit kennitala (digits only)
     day_raw = int(digits[0:2])
     # Company IDs have day offset +40
@@ -116,7 +137,7 @@ def _checksum_ok(digits: str) -> bool:
     return check == int(digits[8])
 
 
-def _compute_checksum_for_first8(first8: str) -> Optional[int]:
+def _compute_checksum_for_first8(first8: str) -> int | None:
     """Compute Mod 11 checksum digit for the first 8 digits.
 
     Returns an int 0-9, or None if the result is 10 (invalid by definition).
@@ -326,7 +347,7 @@ def _default_end_date() -> date:
 
 def generate_personal(
     *,
-    birth_date: Optional[date] = None,
+    birth_date: date | None = None,
     enforce_checksum: bool = True,
     formatted: bool = True,
 ) -> str:
@@ -355,7 +376,7 @@ def generate_personal(
 
 def generate_company(
     *,
-    reg_date: Optional[date] = None,
+    reg_date: date | None = None,
     enforce_checksum: bool = True,
     formatted: bool = True,
 ) -> str:
@@ -387,10 +408,10 @@ def generate_company(
 def generate_kennitala(
     kind: Literal["personal", "company"] = "personal",
     *,
-    target_date: Optional[date] = None,
+    target_date: date | None = None,
     enforce_checksum: bool = True,
     formatted: bool = True,
-    birth_date: Optional[date] = None,
+    birth_date: date | None = None,
 ) -> str:
     """Generate a valid kennitala — unified entry point.
 
@@ -424,11 +445,11 @@ def generate_batch(
     count: int,
     kind: Literal["personal", "company"] = "personal",
     *,
-    target_date: Optional[date] = None,
+    target_date: date | None = None,
     enforce_checksum: bool = True,
     formatted: bool = True,
-    birth_date: Optional[date] = None,
-) -> List[str]:
+    birth_date: date | None = None,
+) -> list[str]:
     """Generate multiple valid kennitölur.
 
     Parameters:

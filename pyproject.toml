@@ -34,6 +34,9 @@ Repository = "https://github.com/vignirvignir/ice-ken"
 [tool.setuptools]
 package-dir = {"" = "src"}
 
+[tool.setuptools.package-data]
+ice_ken = ["py.typed"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["ice_ken*"]
