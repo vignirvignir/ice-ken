@@ -12,6 +12,7 @@ from ice_ken import (
     ParsedKennitala,
     generate_personal,
     generate_company,
+    get_birth_date,
 )
 
 
@@ -27,6 +28,13 @@ COMPANY_RELAXED_DIGITS = "5201603379"
 def test_normalize_strips_non_digits():
     assert normalize(" 120160-3389 ") == VALID_PERSONAL_DIGITS
     assert normalize("12 01 60  -  3389") == VALID_PERSONAL_DIGITS
+
+
+def test_normalize_rejects_non_string():
+    with pytest.raises(TypeError):
+        normalize(None)  # type: ignore[arg-type]
+    with pytest.raises(TypeError):
+        normalize(1201603389)  # type: ignore[arg-type]
 
 
 def test_format_kennitala_success_and_errors():
@@ -192,6 +200,45 @@ def test_is_dataset_id_helper():
     assert is_dataset_id("123") is False
 
 
+def test_mask_visible_tail_full():
+    assert mask(VALID_PERSONAL, visible_tail=10) == VALID_PERSONAL
+
+
 def test_mask_errors_on_bad_length():
     with pytest.raises(ValueError):
         mask("123")
+
+
+def test_mask_errors_on_visible_tail_out_of_range():
+    with pytest.raises(ValueError):
+        mask(VALID_PERSONAL, visible_tail=11)
+    with pytest.raises(ValueError):
+        mask(VALID_PERSONAL, visible_tail=-1)
+
+
+def test_is_personal_rejects_invalid_date():
+    assert is_personal("0001010009") is False  # day=00
+    assert is_personal("1213603389") is False  # month=13
+    assert is_personal("3201603389") is False  # day=32
+
+
+def test_is_personal_rejects_invalid_century():
+    assert is_personal(VALID_PERSONAL_DIGITS[:-1] + "1") is False
+
+
+def test_is_company_rejects_invalid_date():
+    assert is_company("4113012000") is False  # month=13
+    assert is_company("4100012000") is False  # month=00
+
+
+def test_is_company_rejects_invalid_century():
+    assert is_company("5201603371") is False  # century=1
+
+
+def test_get_birth_date_invalid_input():
+    with pytest.raises(ValueError):
+        get_birth_date("123")
+    with pytest.raises(ValueError):
+        get_birth_date("120160-3379")  # bad checksum, strict mode
+    with pytest.raises(ValueError):
+        get_birth_date("0000000000")  # invalid date

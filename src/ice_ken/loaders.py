@@ -3,11 +3,19 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from dataclasses import asdict, dataclass
 from datetime import date
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 import xml.etree.ElementTree as ET
+
+try:
+    from defusedxml.ElementTree import fromstring as _xml_fromstring
+except ImportError:
+    # Python's C-accelerated XMLParser (default since 3.x) does not resolve
+    # external entities, so ET.fromstring is safe for untrusted input in
+    # practice.  Install defusedxml for additional protections (e.g. entity
+    # expansion limits).
+    _xml_fromstring = ET.fromstring
 
 from .kennitala import is_valid, is_company, is_personal, is_dataset_id, parse
 
@@ -29,23 +37,23 @@ def _is_nil(elem: ET.Element) -> bool:
     return False
 
 
-def _text_or_none(elem: ET.Element) -> Optional[str]:
+def _text_or_none(elem: ET.Element) -> str | None:
     if _is_nil(elem):
         return None
     txt = (elem.text or "").strip()
     return txt if txt != "" else None
 
 
-def parse_einstaklingar_xml(path: Union[str, Path]) -> List[Dict[str, Any]]:
+def parse_einstaklingar_xml(path: str | Path) -> list[dict[str, Any]]:
     path = Path(path)
     xml_text = _read_text(path)
     xml_text = _sanitize_known_issues(xml_text)
-    root = ET.fromstring(xml_text)
+    root = _xml_fromstring(xml_text)
     if root.tag != "Einstaklingar":
         raise ValueError("Unexpected root element; expected 'Einstaklingar'")
-    records: List[Dict[str, Any]] = []
+    records: list[dict[str, Any]] = []
     for child in root.findall("Einstaklingur"):
-        rec: Dict[str, Any] = {}
+        rec: dict[str, Any] = {}
         for field in list(child):
             # Strip namespace if any
             tag = field.tag.split("}")[-1] if "}" in field.tag else field.tag
@@ -58,8 +66,8 @@ def _to_iso_date(d: date) -> str:
     return d.isoformat()
 
 
-def validate_records(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    out: List[Dict[str, Any]] = []
+def validate_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
     for rec in records:
         kt = (rec.get("Kennitala") or "").strip()
         v_relaxed = is_valid(kt, enforce_checksum=False)
@@ -68,7 +76,7 @@ def validate_records(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         entity = (
             "company" if is_company(kt) else ("individual" if is_personal(kt) else None)
         )
-        birth_iso: Optional[str] = None
+        birth_iso: str | None = None
         if v_relaxed:
             try:
                 info = parse(kt, enforce_checksum=False)
@@ -87,7 +95,7 @@ def validate_records(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return out
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         description="Parse and validate gervigögn Einstaklingar XML"
     )

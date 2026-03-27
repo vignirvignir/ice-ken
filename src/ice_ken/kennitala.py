@@ -24,8 +24,29 @@ This module provides:
 
 from dataclasses import dataclass
 from datetime import date
-from typing import List, Literal, Optional
+from typing import Literal
 import random
+
+__all__ = [
+    "ParsedKennitala",
+    "normalize",
+    "format_kennitala",
+    "is_valid",
+    "parse",
+    "mask",
+    "is_company",
+    "is_personal",
+    "is_dataset_id",
+    "generate_personal",
+    "generate_company",
+    "generate_kennitala",
+    "generate_batch",
+    "generate_personal_for_date",
+    "generate_company_for_date",
+    "random_personal",
+    "random_company",
+    "get_birth_date",
+]
 
 
 @dataclass(frozen=True)
@@ -45,7 +66,12 @@ def normalize(value: str) -> str:
 
     Returns:
         Digits-only string.
+
+    Raises:
+        TypeError: If ``value`` is not a string.
     """
+    if not isinstance(value, str):
+        raise TypeError(f"Expected str, got {type(value).__name__}")
     return "".join(ch for ch in value if ch.isdigit())
 
 
@@ -60,7 +86,7 @@ def format_kennitala(value: str) -> str:
     return f"{digits[0:6]}-{digits[6:10]}"
 
 
-def _century_base(indicator: int) -> Optional[int]:
+def _century_base(indicator: int) -> int | None:
     if indicator == 8:
         return 1800
     if indicator == 9:
@@ -70,7 +96,7 @@ def _century_base(indicator: int) -> Optional[int]:
     return None
 
 
-def _resolve_birth_date(digits: str) -> Optional[date]:
+def _resolve_birth_date(digits: str) -> date | None:
     # digits: 10-digit kennitala (digits only)
     day_raw = int(digits[0:2])
     # Company IDs have day offset +40
@@ -111,7 +137,7 @@ def _checksum_ok(digits: str) -> bool:
     return check == int(digits[8])
 
 
-def _compute_checksum_for_first8(first8: str) -> Optional[int]:
+def _compute_checksum_for_first8(first8: str) -> int | None:
     """Compute Mod 11 checksum digit for the first 8 digits.
 
     Returns an int 0-9, or None if the result is 10 (invalid by definition).
@@ -136,7 +162,13 @@ def is_valid(value: str, enforce_checksum: bool = True) -> bool:
     - calendar date resolution
 
     Additionally validates checksum (mod 11) iff ``enforce_checksum`` is True.
-    From Feb 18, 2026, newly issued IDs may not satisfy the checksum.
+
+    .. warning::
+
+        From Feb 18, 2026, Registers Iceland may issue kennitalas without
+        valid Modulus 11 checksums. If you are validating user-supplied IDs
+        that may have been issued after this date, pass
+        ``enforce_checksum=False`` to avoid false negatives.
     """
     digits = normalize(value)
     if len(digits) != 10:
@@ -155,6 +187,11 @@ def parse(value: str, enforce_checksum: bool = True) -> ParsedKennitala:
     """Parse a kennitala into structured information.
 
     Raises ValueError if the kennitala is not valid.
+
+    .. warning::
+
+        From Feb 18, 2026, newly issued kennitalas may not have valid
+        checksums. Pass ``enforce_checksum=False`` to accept these IDs.
     """
     digits = normalize(value)
     if len(digits) != 10:
@@ -177,11 +214,23 @@ def parse(value: str, enforce_checksum: bool = True) -> ParsedKennitala:
 def mask(value: str, visible_tail: int = 4) -> str:
     """Return a masked representation, exposing only the last `visible_tail` digits.
 
-    Example: **** **-**1234
+    Example: mask("1201603389") → "******-3389"
+
+    Parameters:
+        value: A kennitala string (with or without separator).
+        visible_tail: Number of trailing digits to leave visible (0–10).
+
+    Raises:
+        ValueError: If the kennitala doesn't have 10 digits or visible_tail
+            is out of range.
     """
     digits = normalize(value)
     if len(digits) != 10:
         raise ValueError("Kennitala must contain exactly 10 digits to mask")
+    if not 0 <= visible_tail <= 10:
+        raise ValueError("visible_tail must be between 0 and 10")
+    if visible_tail == 10:
+        return format_kennitala(digits)
     tail = digits[-visible_tail:] if visible_tail > 0 else ""
     masked_head = "*" * (10 - len(tail))
     masked = f"{masked_head[0:6]}-{masked_head[6:]}{tail}"
@@ -191,15 +240,22 @@ def mask(value: str, visible_tail: int = 4) -> str:
 def is_company(value: str) -> bool:
     """Return True if the kennitala belongs to a company/legal entity.
 
-    Determination is based on the day field being 41–71 (day + 40 rule).
+    Checks the day field (41–71) and validates the date and century indicator.
+    Does not enforce the checksum.
     """
-    return _is_company_digits(normalize(value))
+    digits = normalize(value)
+    return _is_company_digits(digits) and is_valid(digits, enforce_checksum=False)
 
 
 def is_personal(value: str) -> bool:
-    """Return True if the kennitala belongs to an individual (not a company)."""
+    """Return True if the kennitala belongs to an individual (not a company).
+
+    Validates the date and century indicator. Does not enforce the checksum.
+    """
     digits = normalize(value)
-    return len(digits) == 10 and digits.isdigit() and not _is_company_digits(digits)
+    if len(digits) != 10 or not digits.isdigit():
+        return False
+    return not _is_company_digits(digits) and is_valid(digits, enforce_checksum=False)
 
 
 def is_dataset_id(value: str) -> bool:
@@ -253,7 +309,8 @@ def _build_kennitala(
     yy = target_date.year % 100
     c = _century_indicator_for_year(target_date.year)
 
-    while True:
+    max_attempts = 1000
+    for _ in range(max_attempts):
         r = random.randint(20, 99)
         first8 = f"{dd:02d}{mm:02d}{yy:02d}{r:02d}"
         if enforce_checksum:
@@ -270,18 +327,27 @@ def _build_kennitala(
                 p = random.choice(choices)
         digits = f"{first8}{p}{c}"
         break
+    else:
+        raise RuntimeError(
+            f"Failed to generate kennitala after {max_attempts} attempts"
+        )
 
     return format_kennitala(digits) if formatted else digits
 
 
 # Default date ranges for random generation
-_PERSONAL_DATE_RANGE = (date(1930, 1, 1), date(2025, 12, 31))
-_COMPANY_DATE_RANGE = (date(1990, 1, 1), date(2025, 12, 31))
+_PERSONAL_START = date(1930, 1, 1)
+_COMPANY_START = date(1990, 1, 1)
+
+
+def _default_end_date() -> date:
+    """Return Dec 31 of the current year, capped at 2099 (century limit)."""
+    return date(min(date.today().year, 2099), 12, 31)
 
 
 def generate_personal(
     *,
-    birth_date: Optional[date] = None,
+    birth_date: date | None = None,
     enforce_checksum: bool = True,
     formatted: bool = True,
 ) -> str:
@@ -302,7 +368,7 @@ def generate_personal(
         ValueError: If ``birth_date`` has a year outside 1800–2099.
     """
     if birth_date is None:
-        birth_date = _random_date(*_PERSONAL_DATE_RANGE)
+        birth_date = _random_date(_PERSONAL_START, _default_end_date())
     return _build_kennitala(
         birth_date, company=False, enforce_checksum=enforce_checksum, formatted=formatted,
     )
@@ -310,7 +376,7 @@ def generate_personal(
 
 def generate_company(
     *,
-    reg_date: Optional[date] = None,
+    reg_date: date | None = None,
     enforce_checksum: bool = True,
     formatted: bool = True,
 ) -> str:
@@ -333,7 +399,7 @@ def generate_company(
         ValueError: If ``reg_date`` has a year outside 1800–2099.
     """
     if reg_date is None:
-        reg_date = _random_date(*_COMPANY_DATE_RANGE)
+        reg_date = _random_date(_COMPANY_START, _default_end_date())
     return _build_kennitala(
         reg_date, company=True, enforce_checksum=enforce_checksum, formatted=formatted,
     )
@@ -342,17 +408,20 @@ def generate_company(
 def generate_kennitala(
     kind: Literal["personal", "company"] = "personal",
     *,
-    birth_date: Optional[date] = None,
+    target_date: date | None = None,
     enforce_checksum: bool = True,
     formatted: bool = True,
+    birth_date: date | None = None,
 ) -> str:
     """Generate a valid kennitala — unified entry point.
 
     Parameters:
         kind: ``"personal"`` (default) or ``"company"``.
-        birth_date: Date to encode. If ``None``, a random date is chosen.
+        target_date: Date to encode (birth date for personal, registration date
+            for company). If ``None``, a random date is chosen.
         enforce_checksum: When True (default), the returned ID passes Modulus 11.
         formatted: When True (default), returns ``"DDMMYY-NNNX"``.
+        birth_date: Deprecated alias for ``target_date``.
 
     Returns:
         A kennitala string.
@@ -360,13 +429,14 @@ def generate_kennitala(
     Raises:
         ValueError: On invalid ``kind`` or unsupported year.
     """
+    effective_date = target_date or birth_date
     if kind == "personal":
         return generate_personal(
-            birth_date=birth_date, enforce_checksum=enforce_checksum, formatted=formatted,
+            birth_date=effective_date, enforce_checksum=enforce_checksum, formatted=formatted,
         )
     if kind == "company":
         return generate_company(
-            reg_date=birth_date, enforce_checksum=enforce_checksum, formatted=formatted,
+            reg_date=effective_date, enforce_checksum=enforce_checksum, formatted=formatted,
         )
     raise ValueError(f"kind must be 'personal' or 'company', got {kind!r}")
 
@@ -375,19 +445,21 @@ def generate_batch(
     count: int,
     kind: Literal["personal", "company"] = "personal",
     *,
-    birth_date: Optional[date] = None,
+    target_date: date | None = None,
     enforce_checksum: bool = True,
     formatted: bool = True,
-) -> List[str]:
+    birth_date: date | None = None,
+) -> list[str]:
     """Generate multiple valid kennitölur.
 
     Parameters:
         count: Number of IDs to generate. Must be >= 0.
         kind: ``"personal"`` (default) or ``"company"``.
-        birth_date: If given, all IDs share this date; otherwise each gets a
+        target_date: If given, all IDs share this date; otherwise each gets a
             random date.
         enforce_checksum: When True (default), all IDs pass Modulus 11.
         formatted: When True (default), returns ``"DDMMYY-NNNX"`` strings.
+        birth_date: Deprecated alias for ``target_date``.
 
     Returns:
         A list of kennitala strings.
@@ -395,11 +467,12 @@ def generate_batch(
     Raises:
         ValueError: On invalid ``count``, ``kind``, or unsupported year.
     """
+    effective_date = target_date or birth_date
     if count < 0:
         raise ValueError("count must be >= 0")
     return [
         generate_kennitala(
-            kind, birth_date=birth_date, enforce_checksum=enforce_checksum, formatted=formatted,
+            kind, target_date=effective_date, enforce_checksum=enforce_checksum, formatted=formatted,
         )
         for _ in range(count)
     ]
