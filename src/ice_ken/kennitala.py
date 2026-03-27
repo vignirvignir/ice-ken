@@ -45,7 +45,12 @@ def normalize(value: str) -> str:
 
     Returns:
         Digits-only string.
+
+    Raises:
+        TypeError: If ``value`` is not a string.
     """
+    if not isinstance(value, str):
+        raise TypeError(f"Expected str, got {type(value).__name__}")
     return "".join(ch for ch in value if ch.isdigit())
 
 

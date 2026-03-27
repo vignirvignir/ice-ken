@@ -29,6 +29,13 @@ def test_normalize_strips_non_digits():
     assert normalize("12 01 60  -  3389") == VALID_PERSONAL_DIGITS
 
 
+def test_normalize_rejects_non_string():
+    with pytest.raises(TypeError):
+        normalize(None)  # type: ignore[arg-type]
+    with pytest.raises(TypeError):
+        normalize(1201603389)  # type: ignore[arg-type]
+
+
 def test_format_kennitala_success_and_errors():
     assert format_kennitala(VALID_PERSONAL_DIGITS) == VALID_PERSONAL
     with pytest.raises(ValueError):
