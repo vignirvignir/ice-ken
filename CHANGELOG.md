@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v2.0.1 (2026-03-28)
+
+### Bug Fixes
+
+- **ci**: Use version tag for pypa/gh-action-pypi-publish
+  ([`7d1637b`](https://github.com/vignirvignir/ice-ken/commit/7d1637bc02cb88d6a7e74b7a064949cd525c224b))
+
+Docker-based actions require image tags, not commit SHAs. The Docker registry has no image for the
+  commit SHA, causing manifest unknown error.
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+
+
 ## v2.0.0 (2026-03-27)
 
 ### Bug Fixes
