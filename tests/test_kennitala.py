@@ -173,6 +173,41 @@ def test_company_day_extremes_resolve_correctly_relaxed():
     assert info71.birth_date.day == 31
 
 
+def test_company_february_overflow_clamps_to_last_day():
+    # Real production kennitölur with valid Mod 11 checksums whose day
+    # field decodes past Feb 28 in a non-leap year. Without the clamp
+    # they fail date construction and is_valid returns False. The
+    # resolved birth_date here is the *encoded* date (clamped to the
+    # last day of February), not necessarily the registry-recorded
+    # registration date — for company IDs those can diverge.
+    overflows_in_feb_1969 = [
+        "6902690159",  # DD=69 → would-be day 29 (invalid in non-leap 1969)
+        "7102695569",  # DD=71 → would-be day 31
+        "7102690339",
+        "7102696379",
+    ]
+    for digits in overflows_in_feb_1969:
+        assert is_valid(digits, enforce_checksum=True) is True, digits
+        info = parse(digits, enforce_checksum=True)
+        assert info.entity_type == "company"
+        assert info.birth_date == date(1969, 2, 28), digits
+
+
+def test_company_day_overflow_outside_february_still_rejected():
+    # Extension of the clamp rule to other months is unverified, so we
+    # keep failing closed there. Update if/when registry data shows
+    # otherwise.
+    assert is_valid("7104900009", enforce_checksum=False) is False  # Apr DD=71
+    assert is_valid("7106900009", enforce_checksum=False) is False  # Jun DD=71
+
+
+def test_personal_day_overflow_does_not_clamp():
+    # Personal kennitölur (DD 1–31) must NOT use the clamp fallback —
+    # an out-of-range day there is genuinely bad data.
+    assert is_valid("3102690009", enforce_checksum=False) is False  # 31 Feb 1969
+    assert is_valid("3104900009", enforce_checksum=False) is False  # 31 Apr 1990
+
+
 def test_generate_personal_and_company():
     # Generate several personal IDs and validate
     for _ in range(5):
