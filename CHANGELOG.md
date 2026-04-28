@@ -1,6 +1,25 @@
 # CHANGELOG
 
 
+## v2.0.2 (2026-04-28)
+
+### Bug Fixes
+
+- **kennitala**: Clamp company Feb day overflow to last day of month
+  ([`522863b`](https://github.com/vignirvignir/ice-ken/commit/522863b1bbbb3fbb8da2c7f2921abf83ba9cabd5))
+
+Company kennitölur registered on Feb 28 of a non-leap year exhaust the natural DD=68 slot and reuse
+  69/70/71 as overflow, decoding past month-end. Previously _resolve_birth_date returned None for
+  these, causing legitimate IDs (e.g. 6902690159, 7102695569) to fail is_valid even with a valid Mod
+  11 checksum. Clamp company-mode DD>last-day in February to the last day of the month.
+
+Document on ParsedKennitala that birth_date is the *encoded* date and may differ from the registry
+  date for company IDs — the kennitala is an identifier, and the official registration date can
+  diverge from the digits.
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+
+
 ## v2.0.1 (2026-03-28)
 
 ### Bug Fixes
