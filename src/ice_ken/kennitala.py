@@ -22,6 +22,7 @@ This module provides:
 - mask: hide sensitive digits for safe display/logging
 """
 
+import calendar
 from dataclasses import dataclass
 from datetime import date
 from typing import Literal
@@ -55,6 +56,17 @@ class ParsedKennitala:
 
     The default ``repr`` masks the ``digits`` and ``formatted`` fields to
     prevent accidental PII leakage in logs and tracebacks.
+
+    .. note::
+
+        ``birth_date`` is the date encoded in the kennitala digits, not a
+        registry lookup. For individuals this is the birth date. For
+        companies it is the encoded registration date, which may differ
+        from the actual registration date in the Þjóðskrá registry —
+        notably, overflow IDs (DD=69/70/71 in Feb of a non-leap year)
+        decode past month-end and are clamped to the last day of the
+        month. Always consult the registry if you need the canonical
+        registration date.
     """
 
     digits: str
@@ -125,10 +137,8 @@ def _resolve_birth_date(digits: str) -> date | None:
     # digits: 10-digit kennitala (digits only)
     day_raw = int(digits[0:2])
     # Company IDs have day offset +40
-    if 41 <= day_raw <= 71:
-        day = day_raw - 40
-    else:
-        day = day_raw
+    is_company = 41 <= day_raw <= 71
+    day = day_raw - 40 if is_company else day_raw
     month = int(digits[2:4])
     year_two = int(digits[4:6])
     century = _century_base(int(digits[9]))
@@ -138,6 +148,16 @@ def _resolve_birth_date(digits: str) -> date | None:
     try:
         return date(full_year, month, day)
     except ValueError:
+        # Company kennitölur registered on Feb 28 of a non-leap year
+        # exhaust DD=68 and reuse 69/70/71 as overflow slots, decoding
+        # past month-end. Clamp to the last day of February. Confirmed
+        # against the official registry for 6902690159, 7102695569,
+        # 7102690339, 7102696379 (all 1969-02-28). Extension to other
+        # short months is unverified — leave them failing for now.
+        if is_company and month == 2:
+            last_day = calendar.monthrange(full_year, month)[1]
+            if day > last_day:
+                return date(full_year, month, last_day)
         return None
 
 
