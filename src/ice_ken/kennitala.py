@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Kennitala helpers for Icelandic national ID numbers.
 
@@ -21,6 +19,8 @@ This module provides:
 - parse: return structured information including resolved birth date
 - mask: hide sensitive digits for safe display/logging
 """
+
+from __future__ import annotations
 
 import calendar
 from dataclasses import dataclass
@@ -168,20 +168,6 @@ def _is_company_digits(digits: str) -> bool:
     return 41 <= dd <= 71
 
 
-def _checksum_ok(digits: str) -> bool:
-    # Checksum uses the first 8 digits and weights [3,2,7,6,5,4,3,2]
-    weights = [3, 2, 7, 6, 5, 4, 3, 2]
-    total = sum(int(d) * w for d, w in zip(digits[:8], weights))
-    remainder = total % 11
-    check = 11 - remainder
-    if check == 11:
-        check = 0
-    if check == 10:
-        # 10 indicates invalid kennitala
-        return False
-    return check == int(digits[8])
-
-
 def _compute_checksum_for_first8(first8: str) -> int | None:
     """Compute Mod 11 checksum digit for the first 8 digits.
 
@@ -196,6 +182,12 @@ def _compute_checksum_for_first8(first8: str) -> int | None:
     if check == 10:
         return None
     return check
+
+
+def _checksum_ok(digits: str) -> bool:
+    # A computed check value of 10 means no valid checksum exists.
+    check = _compute_checksum_for_first8(digits[:8])
+    return check is not None and check == int(digits[8])
 
 
 def is_valid(value: str, enforce_checksum: bool = False) -> bool:
@@ -419,7 +411,7 @@ def generate_personal(
 
     Parameters:
         birth_date: Specific birth date to encode. If ``None``, a random date
-            in the range 1930–2025 is used.
+            from 1930 through the end of the current year is used.
         enforce_checksum: When True (default), the returned ID passes Modulus 11
             validation. When False, the checksum digit is intentionally wrong.
         formatted: When True (default), returns ``"DDMMYY-NNNX"``; otherwise
@@ -450,7 +442,7 @@ def generate_company(
 
     Parameters:
         reg_date: Specific registration date to encode. If ``None``, a random
-            date in the range 1990–2025 is used.
+            date from 1990 through the end of the current year is used.
         enforce_checksum: When True (default), the returned ID passes Modulus 11
             validation. When False, the checksum digit is intentionally wrong.
         formatted: When True (default), returns ``"DDMMYY-NNNX"``; otherwise
@@ -558,7 +550,7 @@ def generate_personal_for_date(
 ) -> str:
     """Generate a personal kennitala for a specific birth date.
 
-    Equivalent to ``generate_personal(birth_date, ...)``.
+    Equivalent to ``generate_personal(birth_date=..., ...)``.
     """
     return generate_personal(birth_date=birth_date, enforce_checksum=enforce_checksum, formatted=formatted)
 
