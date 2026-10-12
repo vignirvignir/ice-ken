@@ -129,3 +129,6 @@ dmypy.json
 *.dump
 *.bak
 validated.json
+
+# macOS
+.DS_Store

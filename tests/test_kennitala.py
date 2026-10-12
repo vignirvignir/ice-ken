@@ -309,3 +309,10 @@ def test_get_birth_date_invalid_input():
     assert get_birth_date("120160-3379") == date(1960, 1, 12)
     with pytest.raises(ValueError):
         get_birth_date("0000000000")  # invalid date
+
+
+def test_module_docstring_is_exposed():
+    import ice_ken.kennitala as kt_module
+
+    assert kt_module.__doc__ is not None
+    assert "DDMMYY-NNNX" in kt_module.__doc__
