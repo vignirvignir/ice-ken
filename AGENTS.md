@@ -13,7 +13,7 @@ This document defines how autonomous agents should work on this repository with 
   - mask for safe display (`mask`),
   - entity detection (`is_company`, `is_personal`),
   - test dataset marker detection (`is_dataset_id`),
-  - generate test IDs (`generate_personal`, `generate_company`).
+  - generate test IDs (`generate_personal`, `generate_company`, `generate_kennitala`, `generate_batch`).
 - Loaders: `src/ice_ken/loaders.py` parses sample XML and validates records, producing metadata (`validation.relaxed/strict`, `entity_type`, `birth_date`).
 - Documentation: see [docs/about-kennitala.md](docs/about-kennitala.md) for structure, checksum rules, and 2026 policy (relaxed checksum acceptance). Additional docs in [docs/](docs).
 
@@ -29,8 +29,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install package and dependencies
 python3 -m pip install --upgrade pip
-python3 -m pip install -e .
-python3 -m pip install pytest
+python3 -m pip install -e ".[test,xml]"
 ```
 
 - Run tests:
@@ -53,11 +52,10 @@ python3 -m build
 
 ## CI & Release
 
-- CI: [CI workflow](.github/workflows/ci.yml) runs tests on Python 3.9–3.13.
-- Release: [release workflow](.github/workflows/release.yml)
+- CI: [CI workflow](.github/workflows/ci.yml) runs tests on Python 3.9–3.15.
+- Release: [release workflow](.github/workflows/release.yml) — triggered manually (`workflow_dispatch`)
   - Uses `python-semantic-release` to derive next version from Conventional Commits, update [pyproject.toml](pyproject.toml) and [CHANGELOG.md](CHANGELOG.md), tag, and create a GitHub Release.
   - Publishes to PyPI via Trusted Publishing (OIDC) using `pypa/gh-action-pypi-publish`. No `PYPI_TOKEN` required once configured on PyPI.
-  - For pull requests targeting `main`, a TestPyPI job builds and publishes to TestPyPI (OIDC) to validate packaging.
 - PR Title Lint: [semantic-pr.yml](.github/workflows/semantic-pr.yml) enforces Conventional Commit style for PR titles.
 - Commit Message Lint: [commitlint.yml](.github/workflows/commitlint.yml) validates commit messages against Conventional Commits.
 - Badges: see [README.md](README.md) for CI/Release status.
@@ -72,7 +70,7 @@ Agents must write commit messages and PR titles in Conventional Commits format. 
 - Description: lower-case verb phrase, no trailing period.
 - Breaking changes: use `!` after the type (e.g., `feat!: ...`) or add a `BREAKING CHANGE:` footer.
 - Body/footer: start after one blank line.
-- Max header length: 72 chars.
+- Max header length: 120 chars (keep it under ~72 where practical).
 
 Examples:
 
@@ -94,8 +92,8 @@ BREAKING CHANGE: none
 - Push commits to the branch; ensure Conventional Commit messages.
 - Open a Pull Request targeting `main` with a Conventional Commit–style title.
 - Ensure CI is green (tests pass across all Python versions).
-- Do not bump versions manually; semantic-release handles versioning on `push` to `main`.
-- Merges to `main` will trigger the Release pipeline and publish to PyPI via OIDC.
+- Do not bump versions manually; semantic-release handles versioning.
+- Merging to `main` does not release by itself; a maintainer runs the Release workflow to bump, tag, and publish to PyPI via OIDC.
 
 ## Versioning Semantics
 
@@ -117,13 +115,13 @@ BREAKING CHANGE: none
 5. Update docs in `docs/` if APIs or behavior change.
 6. Commit with Conventional Commits (required scope) and push to a feature branch.
 7. Open PR to `main` with a Conventional Commit–style title; ensure CI passes.
-8. After merge, the Release workflow will bump version, create the GitHub Release, and publish to PyPI via Trusted Publishing.
+8. After merge, a maintainer runs the Release workflow to bump the version, create the GitHub Release, and publish to PyPI via Trusted Publishing.
 
 ## Coding & Testing Notes
 
 - Validation modes:
-  - Strict (`is_valid(value)`): enforces Modulus 11 checksum.
-  - Relaxed (`is_valid(value, enforce_checksum=False)`): ignores checksum per 2026 policy.
+  - Relaxed (`is_valid(value)`, the default since 2.0.0): ignores checksum per the Feb 2026 policy.
+  - Strict (`is_valid(value, enforce_checksum=True)`): enforces Modulus 11 checksum.
 - Company IDs: day field stored as `DD = actual_day + 40` (41–71); parsing subtracts 40 when resolving `birth_date`.
 - Century indicator (10th digit): `8`→1800s, `9`→1900s, `0`→2000s.
 - Dataset marker helper: `is_dataset_id` checks positions 7–8 for `14` or `15` (for official synthetic dataset only; do not use in production logic).

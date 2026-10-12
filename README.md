@@ -9,8 +9,8 @@ Kennitala (plural: kennitölur) is Iceland's national ID system, issued by Regis
 
 ## Why ice-ken?
 
-- **Zero dependencies** — pure Python, nothing to install beyond the package itself.
-- **Python 3.9–3.13** — tested across all supported versions.
+- **Zero dependencies** — pure Python, nothing to install beyond the package itself. (Optional `xml` extra adds `defusedxml` for hardened XML loading.)
+- **Python 3.9–3.15** — tested across all supported versions.
 - **2026-ready** — handles the Feb 2026 policy change where Registers Iceland may issue kennitalas without valid Modulus 11 checksums. Dual validation modes (strict and relaxed) let you choose.
 - **Individuals and companies** — validates and distinguishes both personal IDs (kennitala einstaklinga) and company/legal entity IDs (kennitala lögaðila) using the day+40 rule.
 - **Generation for testing** — create realistic, structurally valid kennitalas for tests, fixtures, and seed data without using real IDs.
@@ -33,6 +33,12 @@ See the full background and rules in [docs/about-kennitala.md](docs/about-kennit
 
 ```bash
 python3 -m pip install ice-ken
+```
+
+If you use the XML loader (`ice_ken.loaders`), install the `xml` extra for hardened parsing via `defusedxml`:
+
+```bash
+python3 -m pip install "ice-ken[xml]"
 ```
 
 For local development:
@@ -71,7 +77,7 @@ print(is_company(raw), is_personal(raw))
 - **`is_dataset_id(value)`**: test-only helper for synthetic dataset marker (`14`/`15` in digits 7–8).
 - **`generate_personal(birth_date=None, ...)`**: generate a personal kennitala, optionally for a specific date.
 - **`generate_company(reg_date=None, ...)`**: generate a company kennitala, optionally for a specific date.
-- **`generate_kennitala(kind, birth_date=None, ...)`**: unified generator for either type.
+- **`generate_kennitala(kind, target_date=None, ...)`**: unified generator for either type.
 - **`generate_batch(count, kind, ...)`**: generate multiple kennitölur at once.
 - **`get_birth_date(value, enforce_checksum=False)`**: resolve the birth/registration date.
 - Additional aliases: `generate_personal_for_date`, `generate_company_for_date`, `random_personal`, `random_company`.
@@ -176,8 +182,7 @@ source venv/bin/activate
 
 # Install package and test tools
 python3 -m pip install --upgrade pip
-python3 -m pip install -e .
-python3 -m pip install pytest
+python3 -m pip install -e ".[test,xml]"
 
 # Run tests
 python3 -m pytest -q
@@ -188,8 +193,8 @@ python3 -m ice_ken.loaders data/Thjordska-Gervigogn-VartolulausarKennitolur.xml
 
 ## CI & Release
 
-- GitHub Actions run tests on Python 3.9–3.13 (see [\.github/workflows/ci.yml](.github/workflows/ci.yml)).
-- Releases use `python-semantic-release` to version from Conventional Commits and publish to PyPI via OIDC (see [\.github/workflows/release.yml](.github/workflows/release.yml)).
+- GitHub Actions run tests on Python 3.9–3.15 (see [\.github/workflows/ci.yml](.github/workflows/ci.yml)).
+- Releases are cut manually via the Release workflow (`workflow_dispatch`), which uses `python-semantic-release` to version from Conventional Commits and publish to PyPI via OIDC (see [\.github/workflows/release.yml](.github/workflows/release.yml)).
 - PR titles and commits are linted for Conventional Commits (see [\.github/workflows/semantic-pr.yml](.github/workflows/semantic-pr.yml) and [\.commitlintrc.json](.commitlintrc.json)).
 
 ## Contributing

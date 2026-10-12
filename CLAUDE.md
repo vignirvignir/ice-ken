@@ -9,8 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Install (editable)
-python3 -m pip install -e .
+# Install (editable, with test + hardened-XML extras)
+python3 -m pip install -e ".[test,xml]"
 
 # Run all tests
 python3 -m pytest -q
@@ -62,10 +62,10 @@ Examples:
 - `feat(kennitala): add batch validation helper`
 - `fix(tests): correct company day boundary assertion`
 
-Never commit directly to `main`. Create a feature branch and open a PR. Semantic-release handles versioning on merge to `main`.
+Never commit directly to `main`. Create a feature branch and open a PR. Semantic-release handles versioning when the Release workflow is run.
 
 ## CI & Release
 
-- CI tests on Python 3.9-3.13 (`.github/workflows/ci.yml`).
-- `python-semantic-release` bumps version in `pyproject.toml`, updates `CHANGELOG.md`, tags, and publishes to PyPI via OIDC on merge to `main`.
+- CI tests on Python 3.9-3.15 (`.github/workflows/ci.yml`).
+- `python-semantic-release` bumps version in `pyproject.toml`, updates `CHANGELOG.md`, tags, and publishes to PyPI via OIDC. Releases are cut manually by running the Release workflow (`workflow_dispatch`) — merging to `main` does not release by itself.
 - Do not edit `project.version` in `pyproject.toml` manually.
