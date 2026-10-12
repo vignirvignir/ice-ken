@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,8 @@ version = "2.0.2"
 description = "Validate, parse, format, mask, and generate Icelandic national identification numbers (kennitala / kennitölur)"
 readme = "README.md"
 requires-python = ">=3.9"
-license = {text = "MIT"}
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     {name = "Vignir Lydsson"}
 ]
@@ -19,17 +20,26 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Operating System :: OS Independent",
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
 ]
 
 keywords = ["kennitala", "kennitolur", "iceland", "icelandic", "national-id", "personal-id", "validation", "thjodskra", "registers-iceland"]
 
+[project.optional-dependencies]
+# Hardened XML parsing for ice_ken.loaders (guards against entity expansion).
+xml = ["defusedxml>=0.7"]
+test = ["pytest>=8,<10"]
+
 [project.urls]
 Homepage = "https://github.com/vignirvignir/ice-ken"
 Repository = "https://github.com/vignirvignir/ice-ken"
+Changelog = "https://github.com/vignirvignir/ice-ken/blob/main/CHANGELOG.md"
+Issues = "https://github.com/vignirvignir/ice-ken/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -48,6 +58,4 @@ version_toml = ["pyproject.toml:project.version"]
 changelog_file = "CHANGELOG.md"
 build_command = "python -m build"
 assets = []
-upload_to_pypi = false
-upload_to_release = true
 commit_parser = "conventional"
